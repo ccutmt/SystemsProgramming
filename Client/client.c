@@ -8,13 +8,7 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-
-#define ACK 1
-#define MAP 2
-#define UNMAP 3
-#define READ 4
-#define WRITE 5
-#define ERROR 6
+#include "net_protocol.h"
 
 int main(int argc, char **argv) {
 	int socket_fd = socket(AF_INET, SOCK_STREAM, 0);
