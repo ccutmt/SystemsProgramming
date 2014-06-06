@@ -10,8 +10,7 @@
 #define UNMAP 3 
 #define READ 4
 #define WRITE 5 
-#define ERROR 6 
-#define RECON 7
+#define ERROR 6
 
 int main( int argc, char *argv[] )
 {
@@ -20,7 +19,7 @@ int main( int argc, char *argv[] )
     char buffer[256];
     char s_buf[1];
     struct sockaddr_in serv_addr, cli_addr;
-    int  n;
+    int32_t  n;
 
     // Create server socket (AF_INET, SOCK_STREAM)
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -48,7 +47,7 @@ int main( int argc, char *argv[] )
     // Start listening for the clients, here process will
     // go in sleep mode and will wait for the incoming connection
     listen(sockfd,5);
-    clilen = sizeof(cli_addhttp://stackoverflow.com/questions/8004237/how-do-i-properly-compare-strings-in-cr);
+    clilen = sizeof(cli_addr);
 
     // Accept actual connection from the client
     newsockfd = accept(sockfd, (struct sockaddr *)&cli_addr, 
@@ -65,28 +64,25 @@ int main( int argc, char *argv[] )
 
     // If connection is established then start communicating 
     bzero(buffer,256);
-    n = read(newsockfd, buffer, 255 );
+    int32_t rec_int = 0;
+    n = read(newsockfd, &rec_int, sizeof(rec_int));
     if (n < 0)
     {
         perror("ERROR reading from socket");
         exit(1);
     }
-    printf("Here is the message: %s\n",buffer);
 
-    if(buffer[0] == MAP)
-    {
+    printf("Here is the message: %i\n",(int) ntohl(rec_int));
+
     	// Write a response to the client
-	s_buf = ACK;
-    	n = write(newsockfd, s_buf , 1);
-    	if (n < 0)
-    	{
-        	perror("ERROR writing to socket");
-        	exit(1);
-    	}
-	else
-		printf("capcap");
-	
-    }
+	int test = 1; 
+	int32_t converted_number = htonl(test); 
+	n = write(newsockfd, &converted_number, sizeof(converted_number)); 
+	if (n < 0) 
+	{ 
+		perror("ERROR writing to socket"); 
+		exit(1); 
+	}
 
     // All done, close sockets
     close(newsockfd);
