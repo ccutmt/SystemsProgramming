@@ -20,7 +20,11 @@ int main( int argc, char *argv[] )
     char buffer[256];
     char s_buf[1];
     struct sockaddr_in serv_addr, cli_addr;
+<<<<<<< HEAD
     int32_t  n;
+=======
+    int  n;
+>>>>>>> 6abd540503ef1bf00bca07c40163da8d4538f153
 
     // Create server socket (AF_INET, SOCK_STREAM)
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -65,13 +69,18 @@ int main( int argc, char *argv[] )
 
     // If connection is established then start communicating 
     bzero(buffer,256);
+<<<<<<< HEAD
     int32_t rec_int = 0;
     n = read(newsockfd, &rec_int, sizeof(rec_int));
+=======
+    n = read(newsockfd, buffer, 255 );
+>>>>>>> 6abd540503ef1bf00bca07c40163da8d4538f153
     if (n < 0)
     {
         perror("ERROR reading from socket");
         exit(1);
     }
+<<<<<<< HEAD
 
     printf("Here is the message: %i\n",(int) ntohl(rec_int));
 
@@ -84,6 +93,24 @@ int main( int argc, char *argv[] )
 		perror("ERROR writing to socket"); 
 		exit(1); 
 	}
+=======
+    printf("Here is the message: %s\n",buffer);
+
+    if(buffer[0] == MAP)
+    {
+    	// Write a response to the client
+	s_buf = ACK;
+    	n = write(newsockfd, s_buf , 1);
+    	if (n < 0)
+    	{
+        	perror("ERROR writing to socket");
+        	exit(1);
+    	}
+	else
+		printf("capcap");
+	
+    }
+>>>>>>> 6abd540503ef1bf00bca07c40163da8d4538f153
 
     // All done, close sockets
     close(newsockfd);
