@@ -19,32 +19,24 @@
 #define WRITE 5
 #define ERROR 6
 
-struct map_unmap{
-	char *path;
+struct rm_protocol{
+	int type;
+	int error_id;
+	int path_length;
+	char * path;
 	int offset;
+	int count;
+	int data_length;
+	char * data;
 };
-typedef struct map_unmap map_unmap;
-
-struct read_rqst{
-	char *path;
-	int offset;
-	int rd_count;
-};
-typedef struct read_rqst read_rqst;
-
-struct write_rqst{
-	char *path;
-	int offset_file;
-	int offset_write;
-	char *data;
-};
-typedef struct write_rqst write_rqst;
+typedef struct rm_protocol rm_protocol;
 
 int getInt(int socket_fd);
 int getData(int socket_fd, char *buffer, int length);
-map_unmap* mapUnmapRequest(int socekt_fd);
-read_rqst* readRequest(int socekt_fd);
-write_rqst* writeRequest(int socekt_fd);
+int sendInt(int socket_fd, int tosend);
+int sendData(int socket_fd, char *data, int length);
+rm_protocol* readFromNet(int socket_fd);
+void sendStruct(int socket_fd, rm_protocol *data);
 
 
 #endif /* NET_PROTOCOL_H_ */
