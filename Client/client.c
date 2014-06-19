@@ -10,6 +10,7 @@
 #include <netinet/in.h>
 #include "../Protocol/net_protocol.h"
 #include "memsharing.h"
+#include "semsharing.h"
 
 int main(int argc, char **argv) {
 
@@ -55,13 +56,22 @@ int main(int argc, char **argv) {
 	/*
 	 * Test master key
 	 */
-	void* t = attachKey(MASTER_KEY, sizeof(int));
+	/*void* t = attachKey(MASTER_KEY, sizeof(int));
 	int m = getMaster(t);
 	printf("%i", m);
 	setMaster(t, getpid());
 	getchar();
 	detachKey(t);
-	removeMemSeg(MASTER_KEY, sizeof(int));
+	removeMemSeg(MASTER_KEY, sizeof(int));*/
+
+	/*
+	 * Test semaphore
+	 */
+	int sem1 = getSemId(2545658);
+	updateSem(sem1, 1, 2);
+	printf("%i", getSemVal(sem1));
+	getchar();
+	removeSem(sem1);
 
 	return 0;
 }
