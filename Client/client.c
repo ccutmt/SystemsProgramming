@@ -8,10 +8,15 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include "net_protocol.h"
+#include "../Protocol/net_protocol.h"
+#include "memsharing.h"
 
 int main(int argc, char **argv) {
-	int socket_fd = socket(AF_INET, SOCK_STREAM, 0);
+
+	/*
+	 * Socket creation and connection to server
+	 */
+	/*int socket_fd = socket(AF_INET, SOCK_STREAM, 0);
 
 	if (socket_fd < 0)
 		printf("Could not create socket");
@@ -22,7 +27,7 @@ int main(int argc, char **argv) {
 	bzero(&addr, sizeof(addr));
 	addr.sin_family = AF_INET;
 	addr.sin_port = htons(8080);
-	addr.sin_addr.s_addr = inet_addr("192.168.3.104");
+	addr.sin_addr.s_addr = inet_addr("127.0.0.1");
 
 	int res;
 	if ((res = connect(socket_fd, (struct sockaddr *) &addr, sizeof(addr)))
@@ -30,33 +35,33 @@ int main(int argc, char **argv) {
 		printf("%s\n", strerror(res));
 		return -1;
 	} else
-		printf("Connected to Server\n");
+		printf("Connected to Server\n");*/
 
-	//char *buf = malloc(sizeof(char) * 255);
-	//*buf = "20Hi";
-	// Send message to the server
-	int test = 2;
-	int32_t converted_number = htonl(test);
-	int n = write(socket_fd, &converted_number, sizeof(converted_number));
-	if (n < 0) {
-		perror("ERROR writing to socket");
-		exit(1);
-	}
+	/*
+	 * Sending of one struct
+	 */
+	/*rm_protocol *test = (rm_protocol*) malloc(sizeof(rm_protocol));
+	test->type = 1;
+	test->data = 0;
+	test->data_length = 0;
+	test->count = 0;
+	test->path = 0;
+	test->error_id = 0;
+	test->offset = 50;
+	sendStruct(socket_fd, test);*/
 
-	int reply = 0;
-	while (read(socket_fd, &reply, sizeof(reply)) > 0) {
-		printf("%i", ntohl(reply));
-	}
-	if(ntohl(reply) == ERROR){
-		printf("There was an error");
-	}
-	else if(ntohl(reply) == ACK){
-		printf("acknowledged");
-	}
+	//close(socket_fd);
 
-	//free(buf);
-
-	close(socket_fd);
+	/*
+	 * Test master key
+	 */
+	void* t = attachKey(MASTER_KEY, sizeof(int));
+	int m = getMaster(t);
+	printf("%i", m);
+	setMaster(t, getpid());
+	getchar();
+	detachKey(t);
+	removeMemSeg(MASTER_KEY, sizeof(int));
 
 	return 0;
 }
