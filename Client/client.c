@@ -67,11 +67,13 @@ int main(int argc, char **argv) {
 	/*
 	 * Test semaphore
 	 */
-	int sem1 = getSemId(2545658);
-	updateSem(sem1, 1, 2);
-	printf("%i", getSemVal(sem1));
-	getchar();
-	removeSem(sem1);
+	if(initSemaphores() == 0){
+		requestWrite(sem_header_set);
+		printf("requested write");
+		getchar();
+		removeWrite(sem_header_set);
+	}
+	removeSemaphores();
 
 	return 0;
 }
