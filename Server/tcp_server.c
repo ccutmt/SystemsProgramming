@@ -51,8 +51,7 @@ int main( int argc, char *argv[] )
     clilen = sizeof(cli_addr);
 
     // Accept actual connection from the client
-    newsockfd = accept(sockfd, (struct sockaddr *)&cli_addr, 
-                                &clilen);
+    newsockfd = accept(sockfd, (struct sockaddr *)&cli_addr, (socklen_t*) &clilen);
     if (newsockfd < 0) 
     {
         perror("ERROR on accept");
@@ -73,9 +72,18 @@ int main( int argc, char *argv[] )
         exit(1);
     }*/
 
+<<<<<<< HEAD
     rm_protocol *message;
     //message = readFromNet(newsockfd);
     //printf("%i %i", message->type, message->offset);
+=======
+    /*
+     * Read from network
+     */
+    /*rm_protocol *message;
+    message = readFromNet(newsockfd);
+    printf("%i %i", message->type, message->offset);*/
+>>>>>>> 42c1fe666b4fc8f52390abbbe1b368112433f7b5
 
 
     //printf("Here is the message: %i\n",(int) ntohl(rec_int));
