@@ -4,13 +4,12 @@
 #include <sys/shm.h>
 
 #define MAP_FAILED -1
+#define MASTER_KEY 252458
 
-key_t shared_struct_key = -1;
-key_t shared_files_key = -1;
-rm_list *shared_struct = NULL;
 int shmid = -1;
 
 void * rmmap(fileloc_t location, off_t offset) {
+
 	/*if (shared_struct_key == -1) {
 		if ((shared_struct_key = ftok("/etc", 85744)) == (key_t)-1) {
 			errno = MAP_FAILED;
@@ -74,7 +73,7 @@ void * rmmap(fileloc_t location, off_t offset) {
 }
 
 int rmunmap(void *addr){
-	if(shared_struct == NULL){
+	/*if(shared_struct == NULL){
 		errno = -1;
 		return -1;
 	}
@@ -91,6 +90,6 @@ int rmunmap(void *addr){
 		if(!shmctl(shmid, IPC_RMID, NULL)){
 			perror("Error while removing shared memory");
 		}
-	}
+	}*/
 	return 0;
 }

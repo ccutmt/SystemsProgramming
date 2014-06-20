@@ -8,8 +8,6 @@
 
 #define SEM_HEADER_ID 65525
 #define SEM_DATA_ID 65526
-#define READ_RQST 1
-#define WRITE_RQST 2
 
 int initSemaphores();
 void removeSemaphores();
