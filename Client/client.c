@@ -17,7 +17,7 @@ int main(int argc, char **argv) {
 	/*
 	 * Socket creation and connection to server
 	 */
-	/*int socket_fd = socket(AF_INET, SOCK_STREAM, 0);
+	int socket_fd = socket(AF_INET, SOCK_STREAM, 0);
 
 	if (socket_fd < 0)
 		printf("Could not create socket");
@@ -36,7 +36,7 @@ int main(int argc, char **argv) {
 		printf("%s\n", strerror(res));
 		return -1;
 	} else
-		printf("Connected to Server\n");*/
+		printf("Connected to Server\n");
 
 	/*
 	 * Sending of one struct
@@ -51,7 +51,7 @@ int main(int argc, char **argv) {
 	test->offset = 50;
 	sendStruct(socket_fd, test);*/
 
-	//close(socket_fd);
+	close(socket_fd);
 
 	/*
 	 * Test master key
@@ -67,13 +67,13 @@ int main(int argc, char **argv) {
 	/*
 	 * Test semaphore
 	 */
-	if(initSemaphores() == 0){
+	/*if(initSemaphores() == 0){
 		requestWrite(sem_header_set);
 		printf("requested write");
 		getchar();
 		removeWrite(sem_header_set);
 	}
-	removeSemaphores();
+	removeSemaphores();*/
 
 	return 0;
 }
