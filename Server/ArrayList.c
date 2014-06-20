@@ -2,7 +2,7 @@
 #include <stdlib.h>
 
 #include "ArrayList.h"
-//#include <arrays/ArrayUtil.h>
+#include <arrays/ArrayUtil.h>
 
 void init (ArrayList *const list)
 {

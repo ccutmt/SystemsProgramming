@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <strings.h>
 #include "../Protocol/net_protocol.h"
+#include "tcp_server.h"
 
 #define ACK 1 
 #define MAP 2 
@@ -16,6 +17,7 @@
 int main( int argc, char *argv[] )
 {
     // Declare variables
+    struct connections c[10];
     int sockfd, newsockfd, portno, clilen;
     //char buffer[256];
     //char s_buf[1];
@@ -36,7 +38,6 @@ int main( int argc, char *argv[] )
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_addr.s_addr = INADDR_ANY; // Accept connections from any address
     serv_addr.sin_port = htons(portno);
- 
     // Bind the host address
     if (bind(sockfd, (struct sockaddr *) &serv_addr,
                           sizeof(serv_addr)) < 0)
@@ -59,7 +60,13 @@ int main( int argc, char *argv[] )
     }
 	else
 	{
-		printf("Client connected\n");
+		printf("Client connected\n");		
+    		unsigned long ip = cli_addr.sin_addr.s_addr;
+		printf("ip = %lu ", ip); 
+		c[0].ip = ip;
+		c[0].id = 0;
+
+		printf("Client details/nIP: %lu /n Client Id: %i ", c[0].ip, c[0].id);
 	}
 
     // If connection is established then start communicating 
@@ -72,18 +79,15 @@ int main( int argc, char *argv[] )
         exit(1);
     }*/
 
-<<<<<<< HEAD
-    rm_protocol *message;
+    //rm_protocol *message;
     //message = readFromNet(newsockfd);
     //printf("%i %i", message->type, message->offset);
-=======
     /*
      * Read from network
      */
-    /*rm_protocol *message;
-    message = readFromNet(newsockfd);
-    printf("%i %i", message->type, message->offset);*/
->>>>>>> 42c1fe666b4fc8f52390abbbe1b368112433f7b5
+    rm_protocol *message;
+    //message = readFromNet(newsockfd);
+    //printf("%i %i", message->type, message->offset);
 
 
     //printf("Here is the message: %i\n",(int) ntohl(rec_int));

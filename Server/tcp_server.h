@@ -4,7 +4,7 @@
 typedef struct connections
 {
     int id;
-    char *ip;	
+    unsigned long ip;	
 }connections;
 
 #endif // TCP_SERVER_H
