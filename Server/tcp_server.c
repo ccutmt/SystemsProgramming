@@ -4,6 +4,7 @@
 #include <netinet/in.h>
 #include <stdlib.h>
 #include <strings.h>
+#include "../Protocol/net_protocol.h"
 
 #define ACK 1 
 #define MAP 2 
@@ -16,10 +17,10 @@ int main( int argc, char *argv[] )
 {
     // Declare variables
     int sockfd, newsockfd, portno, clilen;
-    char buffer[256];
-    char s_buf[1];
+    //char buffer[256];
+    //char s_buf[1];
     struct sockaddr_in serv_addr, cli_addr;
-    int32_t  n;
+    //int32_t  n;
 
     // Create server socket (AF_INET, SOCK_STREAM)
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -63,26 +64,31 @@ int main( int argc, char *argv[] )
 	}
 
     // If connection is established then start communicating 
-    bzero(buffer,256);
+    /*bzero(buffer,256);
     int32_t rec_int = 0;
     n = read(newsockfd, &rec_int, sizeof(rec_int));
     if (n < 0)
     {
         perror("ERROR reading from socket");
         exit(1);
-    }
+    }*/
 
-    printf("Here is the message: %i\n",(int) ntohl(rec_int));
+    rm_protocol *message;
+    message = readFromNet(newsockfd);
+    printf("%i %i", message->type, message->offset);
+
+
+    //printf("Here is the message: %i\n",(int) ntohl(rec_int));
 
     	// Write a response to the client
-	int test = 1; 
+	/*int test = 1;
 	int32_t converted_number = htonl(test); 
 	n = write(newsockfd, &converted_number, sizeof(converted_number)); 
 	if (n < 0) 
 	{ 
 		perror("ERROR writing to socket"); 
 		exit(1); 
-	}
+	}*/
 
     // All done, close sockets
     close(newsockfd);
