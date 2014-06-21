@@ -6,14 +6,16 @@
 void init (ArrayList *const list)
 {
     list->size = 2;
-    list->elements = (Element*) calloc(sizeof(Element), list->size);
-    list->current = -1;
+    list->elements = (Element*) calloc(list->size, sizeof(Element));
+    list->current = 0;
+	printf("Arraylist init");
 }
 
 int add (ArrayList *const list, Element e)
 {
-    if (list->current+1 < list->size)
+    if (list->current < list->size)
     {
+	printf("adding element");
     	list->elements[list->current] = e;
     	return 1;
     }
@@ -24,11 +26,12 @@ int add (ArrayList *const list, Element e)
     	return 1;
     }
 }
+
 static void resize(ArrayList* const list)
 {
     int oldsize = list->size;
     list->size *= 2;
-    printf("new size = %i", list->size);
+    //printf("new size = %i", list->size);
     Element *newArr = (Element*) calloc(list->size, sizeof(Element));
     memcpy(newArr,list->elements, oldsize);  
     free(list->elements);
@@ -63,20 +66,21 @@ int isEmpty (const ArrayList *const list)
     return NULL;
 }*/
 
+void clean(ArrayList *list)
+{
+    free(list->elements);
+}
+
 void print (const ArrayList *const list)
 {
     int i;
-    for (i=0; i<=list->current; i++)
+    for (i=-1; i<=list->current; i++)
     {
+    printf("printing");
     	Element e = list->elements[i];
     	printElement(&e);
     }
     printf("\n");
-}
-
-void clean(ArrayList *list)
-{
-    free(list->elements);
 }
 
 static void printElement(const Element *const e)
