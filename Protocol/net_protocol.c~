@@ -46,7 +46,7 @@ rm_protocol* readFromNet(int socket_fd) {
 	mystruct->count = getInt(socket_fd);
 	mystruct->data_length = getInt(socket_fd);
 	char *data = malloc(sizeof(char*) * mystruct->data_length);
-	getData(socket_fd, data, mystruct->data_length);
+	getData(socket_fd, path, mystruct->data_length);
 	mystruct->data = data;
 
 	return mystruct;

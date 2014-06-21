@@ -19,10 +19,10 @@ int main( int argc, char *argv[] )
     // Declare variables
     struct connections c[10];
     int sockfd, newsockfd, portno, clilen;
-    //char buffer[256];
-    //char s_buf[1];
+    char buffer[256];
+    char s_buf[1];
     struct sockaddr_in serv_addr, cli_addr;
-    //int32_t  n;
+    int32_t  n;
 
     // Create server socket (AF_INET, SOCK_STREAM)
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -62,45 +62,23 @@ int main( int argc, char *argv[] )
 	{
 		printf("Client connected\n");		
     		unsigned long ip = cli_addr.sin_addr.s_addr;
-		printf("ip = %lu ", ip); 
+		//printf("ip = %lu \n", ip); 
 		c[0].ip = ip;
 		c[0].id = 0;
 
-		printf("Client details/nIP: %lu /n Client Id: %i ", c[0].ip, c[0].id);
+		printf("Client details\nIP: %lu \n Client Id: %i ", c[0].ip, c[0].id);
 	}
 
     // If connection is established then start communicating 
-    /*bzero(buffer,256);
-    int32_t rec_int = 0;
-    n = read(newsockfd, &rec_int, sizeof(rec_int));
-    if (n < 0)
-    {
-        perror("ERROR reading from socket");
-        exit(1);
-    }*/
-
-    //rm_protocol *message;
-    //message = readFromNet(newsockfd);
-    //printf("%i %i", message->type, message->offset);
+    rm_protocol *message;
+    message = readFromNet(newsockfd);
+    printf("%i %i %i %s", message->type, message->offset, message->data_length ,message->data);
     /*
      * Read from network
      */
-    rm_protocol *message;
-    //message = readFromNet(newsockfd);
-    //printf("%i %i", message->type, message->offset);
-
-
-    //printf("Here is the message: %i\n",(int) ntohl(rec_int));
-
-    	// Write a response to the client
-	/*int test = 1;
-	int32_t converted_number = htonl(test); 
-	n = write(newsockfd, &converted_number, sizeof(converted_number)); 
-	if (n < 0) 
-	{ 
-		perror("ERROR writing to socket"); 
-		exit(1); 
-	}*/
+    /*rm_protocol *message;
+    message = readFromNet(newsockfd);
+    printf("%i %i", message->type, message->offset);*/
 
     // All done, close sockets
     close(newsockfd);
