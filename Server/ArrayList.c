@@ -6,7 +6,7 @@
 void init (ArrayList *const list)
 {
     list->size = 2;
-    list->elements = (Element*) calloc(sizeof(Element), list->size);
+    list->elements = (Element*) calloc(list->size, sizeof(Element));
     list->current = -1;
 }
 
