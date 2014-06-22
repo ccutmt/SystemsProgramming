@@ -4,6 +4,10 @@ int initCoordinator(){
 	//Create message queue and register signal
 	if(signal(SIGUSR1, newMsgInQueue) == SIG_ERR)
 		return -1;
+	if(signal(SIGTERM, cleanUp) == SIG_ERR)
+		return -1;
+	if(signal(SIGINT, cleanUp) == SIG_ERR)
+		return -1;
 	if((_queue_id = getQueueId(_MSGQUEUE_KEY)) == -1)
 		return -1;
 
@@ -91,4 +95,11 @@ void destroyCoordinator(){
 		removeMemSeg(_header_mem_id);
 		removeMemSeg(_data_mem_id);
 	}
+}
+
+/*
+ * Function used to catch SIGINT interrupt so that the program terminates normally
+ */
+void cleanUp(int signo){
+	exit(0);
 }
