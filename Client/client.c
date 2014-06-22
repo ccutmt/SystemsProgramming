@@ -8,10 +8,7 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include "../Protocol/net_protocol.h"
-#include "memsharing.h"
-#include "semsharing.h"
-#include "message_queues.h"
+#include "coordinator.h"
 
 int main(int argc, char **argv) {
 
@@ -57,7 +54,7 @@ int main(int argc, char **argv) {
 	/*
 	 * Test master key
 	 */
-	void* t = attachKey(MASTER_KEY, sizeof(int));
+	/*void* t = attachKey(MASTER_KEY, sizeof(int));
 
 	int id = getQueueId(MSGQUEUE_KEY);
 
@@ -77,7 +74,7 @@ int main(int argc, char **argv) {
 	}else printf("reply was empty\n");
 	free(reply);
 	detachKey(t);
-	removeMemSeg(MASTER_KEY, sizeof(int));
+	removeMemSeg(MASTER_KEY, sizeof(int));*/
 
 	/*
 	 * Test semaphore
@@ -96,7 +93,15 @@ int main(int argc, char **argv) {
 	/*int id = getQueueId(MSGQUEUE_KEY);
 	sendMsgQueue(id, getpid(), 1, 2, 0);
 	rqst_over_queue *reply = receiveMsgQueue(id);
-	printf("%i", reply->request);*/
-	removeQueue(id);
+	printf("%i", reply->request);
+	removeQueue(id);*/
+
+	/*
+	 * Test coordinator
+	 */
+	int result = initCoordinator();
+	//printf("%i", result);
+	getchar();
+
 	return 0;
 }

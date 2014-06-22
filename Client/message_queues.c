@@ -21,14 +21,16 @@ void removeQueue(int id){
 	}
 }
 
-void sendMsgQueue(int qid, int dest_pid, int offset, int request, int error){
+int sendMsgQueue(int qid, int dest_pid, int offset, int request, int error){
+	int result = -1;
 	rqst_over_queue *msgp = (rqst_over_queue*) malloc(sizeof(rqst_over_queue));
 	msgp->pid = dest_pid;
 	msgp->offset = offset;
 	msgp->error = error;
 	msgp->request = request;
-	msgsnd(qid, msgp, sizeof(rqst_over_queue), IPC_NOWAIT);
+	result = msgsnd(qid, msgp, sizeof(rqst_over_queue), IPC_NOWAIT);
 	free(msgp);
+	return result;
 }
 
 rqst_over_queue* receiveMsgQueue(int qid){

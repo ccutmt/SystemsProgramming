@@ -6,13 +6,13 @@
 #include <sys/shm.h>
 #include <errno.h>
 
-#define MASTER_KEY 252458
+#define _HEADER_KEY 252458
+#define _DATA_KEY 252459
 
-int getMaster(void* pos);
-void setMaster(void* pos, int pid);
-void* attachKey(key_t key, size_t size);
+int getShmId(key_t key, size_t size);
+void* attachKey(int id);
 void detachKey(void* addr);
-void removeMemSeg(key_t key, size_t size);
+void removeMemSeg(int id);
 
 
 #endif /* MEMSHARING_H_ */
