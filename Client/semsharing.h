@@ -14,11 +14,10 @@ void removeSemaphores();
 int getSemId(key_t key, int size);
 void removeSem(int id);
 void updateSem(int id, struct sembuf* sops ,int snum);
-int getSemVal(int id, int pos);
 void requestRead(int id);
 void requestWrite(int id);
-void removeRead(int id);
-void removeWrite(int id);
+void releaseRead(int id);
+void releaseWrite(int id);
 
 int sem_header_set;
 int sem_data_set;

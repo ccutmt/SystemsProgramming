@@ -53,14 +53,6 @@ void updateSem(int id, struct sembuf* sops, int nsops){
 	}
 }
 
-int getSemVal(int id, int pos){
-	int val = -1;
-	if((val = semctl(id, 0, GETVAL, pos)) == -1){
-		perror("Error while getting semaphore value");
-	}
-	return val;
-}
-
 void requestRead(int id){
 	struct sembuf* sops = (struct sembuf*)malloc(sizeof(struct sembuf)*2);
 	//Wait for writers to become 0
@@ -93,7 +85,7 @@ void requestWrite(int id){
 	free(sops);
 }
 
-void removeRead(int id){
+void releaseRead(int id){
 	struct sembuf* sops = (struct sembuf*)malloc(sizeof(struct sembuf));
 	//Remove lock
 	sops[0].sem_num = 0;
@@ -103,7 +95,7 @@ void removeRead(int id){
 	free(sops);
 }
 
-void removeWrite(int id){
+void releaseWrite(int id){
 	struct sembuf* sops = (struct sembuf*)malloc(sizeof(struct sembuf));
 	//Remove lock
 	sops[0].sem_num = 1;

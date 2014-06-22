@@ -5,6 +5,7 @@
 #include "message_queues.h"
 #include "memsharing.h"
 #include "semsharing.h"
+#include "semsharing.h"
 
 int _queue_id;
 int _header_mem_id;

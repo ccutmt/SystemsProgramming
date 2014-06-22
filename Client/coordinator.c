@@ -7,6 +7,10 @@ int initCoordinator(){
 	if((_queue_id = getQueueId(_MSGQUEUE_KEY)) == -1)
 		return -1;
 
+	//Init semaphores
+	if(initSemaphores() == -1)
+		return -1;
+
 	//Attach shared memory segments
 	if((_header_mem_id = getShmId(_HEADER_KEY, sizeof(int)*2)) == -1)
 		return -1;
@@ -18,11 +22,17 @@ int initCoordinator(){
 		return -1;
 
 	//Check if master exists and add number of processes that are alive
-	if(getSharedInt(_header_memory) == 0){
+	requestRead(sem_header_set);
+	int pno = getSharedInt(_header_memory + sizeof(int)*2);
+	int master = getSharedInt(_header_memory);
+	releaseRead(sem_header_set);
+
+	requestWrite(sem_header_set);
+	if(master == 0){
 		setSharedInt(_header_memory, getpid());
 	}
-	int pno = getSharedInt(_header_memory + sizeof(int)*2);
 	setSharedInt(_header_memory + sizeof(int)*2, pno+1);
+	releaseWrite(sem_header_set);
 
 	atexit(destroyCoordinator);
 
@@ -51,8 +61,20 @@ void setSharedInt(void* pos, int id){
 }
 
 void destroyCoordinator(){
+	/*
+	 * Update no of active processes
+	 * Known bug: if a process is executed while/just after the variable pno is read,
+	 * the IPC structures are still removed and the other process will fail since the
+	 * new process can't increment pno wile this process is reading it
+	 */
+	requestRead(sem_header_set);
 	int pno = getSharedInt(_header_memory + sizeof(int)*2);
+	releaseRead(sem_header_set);
+
+	requestWrite(sem_header_set);
 	setSharedInt(_header_memory + sizeof(int)*2, pno - 1);
+	releaseWrite(sem_header_set);
+
 	detachKey(_header_memory);
 	detachKey(_data_memory);
 
@@ -65,6 +87,7 @@ void destroyCoordinator(){
 	//If this is the last process alive, destroy IPC structures
 	if(pno == 1){
 		removeQueue(_queue_id);
+		removeSemaphores();
 		removeMemSeg(_header_mem_id);
 		removeMemSeg(_data_mem_id);
 	}
