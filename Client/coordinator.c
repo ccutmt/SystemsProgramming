@@ -1,5 +1,6 @@
 #include "coordinator.h"
 
+
 int initCoordinator(){
 	//Create message queue and register signal
 	if(signal(SIGUSR1, newMsgInQueue) == SIG_ERR)
@@ -16,7 +17,7 @@ int initCoordinator(){
 		return -1;
 
 	//Attach shared memory segments
-	if((_header_mem_id = getShmId(_HEADER_KEY, sizeof(int)*2)) == -1)
+	if((_header_mem_id = getShmId(_HEADER_KEY, sizeof(int))) == -1)
 		return -1;
 	if((_data_mem_id = getShmId(_DATA_KEY, sizeof(int))) == -1)
 		return -1;
@@ -26,16 +27,16 @@ int initCoordinator(){
 		return -1;
 
 	//Check if master exists and add number of processes that are alive
-	requestRead(sem_header_set);
-	int pno = getSharedInt(_header_memory + sizeof(int)*2);
-	int master = getSharedInt(_header_memory);
-	releaseRead(sem_header_set);
-
 	requestWrite(sem_header_set);
+
+	int pno = getSharedInt(_header_memory + sizeof(int));
+	int master = getSharedInt(_header_memory);
+
 	if(master == 0){
 		setSharedInt(_header_memory, getpid());
 	}
-	setSharedInt(_header_memory + sizeof(int)*2, pno+1);
+	setSharedInt(_header_memory + sizeof(int), pno+1);
+
 	releaseWrite(sem_header_set);
 
 	atexit(destroyCoordinator);
@@ -57,7 +58,7 @@ int sendMsg(int dest_pid, int offset, int request, int error){
 }
 
 int getSharedInt(void* pos){
-	return *(int*) pos;
+	return *(int *) pos;
 }
 
 void setSharedInt(void* pos, int id){
@@ -71,12 +72,10 @@ void destroyCoordinator(){
 	 * the IPC structures are still removed and the other process will fail since the
 	 * new process can't increment pno wile this process is reading it
 	 */
-	requestRead(sem_header_set);
-	int pno = getSharedInt(_header_memory + sizeof(int)*2);
-	releaseRead(sem_header_set);
 
 	requestWrite(sem_header_set);
-	setSharedInt(_header_memory + sizeof(int)*2, pno - 1);
+	int pno = getSharedInt(_header_memory + sizeof(int));
+	setSharedInt(_header_memory + sizeof(int), pno - 1);
 	releaseWrite(sem_header_set);
 
 	detachKey(_header_memory);
