@@ -6,6 +6,7 @@
 #include <strings.h>
 #include "../Protocol/net_protocol.h"
 #include "tcp_server.h"
+#include "ArrayList.h"
 
 #define ACK 1 
 #define MAP 2 
@@ -17,7 +18,7 @@
 int main( int argc, char *argv[] )
 {
     // Declare variables
-    struct connections c[10];
+    ArrayList * ClientList = NULL;
     int sockfd, newsockfd, portno, clilen;
     char buffer[256];
     char s_buf[1];
@@ -62,11 +63,18 @@ int main( int argc, char *argv[] )
 	{
 		printf("Client connected\n");		
     		unsigned long ip = cli_addr.sin_addr.s_addr;
-		//printf("ip = %lu \n", ip); 
-		c[0].ip = ip;
-		c[0].id = 0;
-
-		printf("Client details\nIP: %lu \n Client Id: %i ", c[0].ip, c[0].id);
+		printf("Client details\nIP: %lu \n", ip);
+		if(ClientList == NULL)
+		{
+			ClientList = malloc(sizeof(ArrayList));
+			initArrayList(ClientList);
+		}
+		connections * conn = malloc(sizeof(connections));
+		conn->ip = ip;
+		conn->id = 0;
+		add(ClientList, conn);
+		connections *e = (connections*) getElement(ClientList, 0);
+		printf("Client details\nIP: %lu \n ", e->ip);
 	}
 
     // If connection is established then start communicating 
@@ -79,9 +87,15 @@ int main( int argc, char *argv[] )
     /*rm_protocol *message;
     message = readFromNet(newsockfd);
     printf("%i %i", message->type, message->offset);*/
-
+  
+    FILE *fp;
+    fp = fopen("FILE_1.txt", "r");
+    
+    fclose(fp);
     // All done, close sockets
     close(newsockfd);
     close(sockfd);
     return 0; 
 }
+
+

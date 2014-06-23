@@ -8,7 +8,7 @@ typedef struct
 {
     int current;
     int size;
-    void **elements;
+    void *elements;
 }ArrayList;
 
 void	initArrayList (ArrayList*const);

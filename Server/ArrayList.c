@@ -3,14 +3,14 @@
 #include <string.h>
 #include "ArrayList.h"
 
-void init (ArrayList *const list)
+void initArrayList (ArrayList *const list)
 {
 	list->size = 2;
-	list->elements = (Element*) calloc(list->size, sizeof(Element));
+	list->elements = (void *) calloc(list->size, sizeof(void *));
 	list->current = -1;
 }
 
-void add (ArrayList *const list, Element e)
+void add (ArrayList *const list, void * e)
 {
 	if (list->current < list->size-1)
 	{
@@ -28,23 +28,10 @@ void add (ArrayList *const list, Element e)
 void resize(ArrayList* const list)
 {
 	list->size *= 2;
-	Element *newArr = (Element*) malloc(sizeof(Element) * list->size);
-	memcpy(newArr,list->elements, (list->current+1) * sizeof(Element));
+	void *newArr = malloc(sizeof(void *) * list->size);
+	memcpy(newArr,list->elements, (list->current+1) * sizeof(void *));
 	free(list->elements);
 	list->elements = newArr;
-}
-
-int indexOf (const ArrayList *const list, Element e)
-{
-	int index = -1;
-	int counter = 0;
-	while (counter <= list->current)
-	{
-		if (e.data == list->elements[counter].data)
-			return counter;
-		counter++;
-	}
-	return index;
 }
 
 int isEmpty (const ArrayList *const list)
@@ -56,31 +43,24 @@ void removeAt(ArrayList *const list, int index)
 {
 	if (index <= list->current)
 	{
-		memmove(&list->elements[index],&list->elements[index+1], ((list->current+1) - index) * sizeof(Element));
+		memmove(&list->elements[index],&list->elements[index+1], ((list->current+1) - index) * sizeof(void *));
 		list->current--;
 	}
 }
 
-void clean(ArrayList *list)
+void freeAll(ArrayList *list)
 {
-	free(list->elements);
+	int i = 0;
+ 	for(i = 0; i <= list->current; i++)
+        	free(list->elements);
 }
 
-void print (const ArrayList *const list)
+void * getElement (ArrayList *const list, int index)
 {
-	int i;
-	for (i=0; i<= list->current; i++)
-	{
-		Element e = list->elements[i];
-		printElement(&e);
-	}
-	printf("\n");
+    if (index <= list->current)
+    {
+    	return list->elements[index];
+    }
+    
+    return NULL;
 }
-
-void printElement(const Element *const e)
-{
-	printf("%i ", e->data);
-}
-
-
-
