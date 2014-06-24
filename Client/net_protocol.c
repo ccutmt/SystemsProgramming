@@ -21,7 +21,7 @@ int sendInt(int socket_fd, uint32_t tosend){
 }
 
 int getData(int socket_fd, char* buffer) {
-	if (read(socket_fd, buffer, 256) < 0) {
+	if (read(socket_fd, buffer, _MAXLENGTH) < 0) {
 		perror("Error reading data from socket");
 		return -1;
 	}
@@ -30,7 +30,7 @@ int getData(int socket_fd, char* buffer) {
 
 int sendData(int socket_fd, char *data){
 	int result = 0;
-	result = write(socket_fd, data, 256 * sizeof(char));
+	result = write(socket_fd, data, _MAXLENGTH * sizeof(char));
 	return result;
 }
 
@@ -42,13 +42,13 @@ void readFromNet(int socket_fd, rm_protocol* mystruct) {
 	mystruct->error_id = getInt(socket_fd);
 	//mystruct->path_length = getInt(socket_fd);
 	//char *path = malloc(sizeof(char) * mystruct->path_length);
-	getData(socket_fd, mystruct->path, mystruct->path_length);
+	getData(socket_fd, mystruct->path);
 	//mystruct->path = path;
 	mystruct->offset = getInt(socket_fd);
 	mystruct->count = getInt(socket_fd);
-	mystruct->data_length = getInt(socket_fd);
-	mystruct->data = malloc(sizeof(char) * mystruct->data_length);
-	getData(socket_fd, mystruct->data, mystruct->data_length);
+	//mystruct->data_length = getInt(socket_fd);
+	//mystruct->data = malloc(sizeof(char) * mystruct->data_length);
+	getData(socket_fd, mystruct->data);
 }
 
 void sendStruct(int socket_fd, rm_protocol *data) {
@@ -108,50 +108,52 @@ int getServerFd(struct in_addr ip, int port){
 
 void makeMapRequest(rm_protocol *tosend, int pid, char *path, int offset){
 	tosend->count = 0;
-	tosend->data = "";
-	tosend->data_length = 0;
+	//tosend->data = "";
+	//tosend->data_length = 0;
 	tosend->error_id = 0;
 	tosend->filepart = 0;
 	tosend->offset = offset;
-	tosend->path = path;
-	tosend->path_length = strlen(path);
+	memcpy(tosend->path, path, _MAXLENGTH * sizeof(char));
+	//tosend->path = path;
+	//tosend->path_length = strlen(path);
 	tosend->pid = pid;
 	tosend->type = MAP;
 }
 
 void makeReadRequest(rm_protocol *tosend, int pid, uint32_t filepartid, int offset, int count){
 	tosend->count = count;
-	tosend->data = "";
-	tosend->data_length = 0;
+	//tosend->data = "";
+	//tosend->data_length = 0;
 	tosend->error_id = 0;
 	tosend->filepart = filepartid;
 	tosend->offset = offset;
-	tosend->path = "";
-	tosend->path_length = 0;
+	//tosend->path = "";
+	//tosend->path_length = 0;
 	tosend->pid = pid;
 	tosend->type = READ;
 }
 void makeWriteRequest(rm_protocol *tosend, uint32_t fpart, int pid, char *data, int offset, int count){
 	tosend->count = count;
-	tosend->data = data;
-	tosend->data_length = strlen(data);
+	memcpy(tosend->data, data, _MAXLENGTH * sizeof(char));
+	//tosend->data = data;
+	//tosend->data_length = strlen(data);
 	tosend->error_id = 0;
 	tosend->filepart = fpart;
 	tosend->offset = offset;
-	tosend->path = "";
-	tosend->path_length = 0;
+	//tosend->path = "";
+	//tosend->path_length = 0;
 	tosend->pid = pid;
 	tosend->type = WRITE;
 }
 void makeUnmapRequest(rm_protocol *tosend, uint32_t fpart, int pid){
 	tosend->count = 0;
-	tosend->data = "";
-	tosend->data_length = 0;
+	//tosend->data = "";
+	//tosend->data_length = 0;
 	tosend->error_id = 0;
 	tosend->filepart = fpart;
 	tosend->offset = 0;
-	tosend->path = "";
-	tosend->path_length = 0;
+	//tosend->path = "";
+	//tosend->path_length = 0;
 	tosend->pid = pid;
 	tosend->type = UNMAP;
 }

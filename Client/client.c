@@ -156,5 +156,7 @@ int main(int argc, char **argv) {
 	fl.port = 8080;
 	rmmap(fl, 0);
 
+	getchar();
+
 	return 0;
 }

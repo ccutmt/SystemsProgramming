@@ -11,6 +11,8 @@
 struct rqst_over_queue{
 	long pid;
 	rm_protocol message;
+	struct in_addr ipaddress;
+	int port;
 	/*int owner;
 	int request;
 	int offset;

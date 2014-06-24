@@ -19,6 +19,7 @@
 #define READ 4
 #define WRITE 5
 #define ERROR 6
+#define _MAXLENGTH 256
 
 struct rm_protocol{
 	int pid;
@@ -41,9 +42,9 @@ struct server_data{
 typedef struct server_data server_data;
 
 uint32_t getInt(int socket_fd);
-int getData(int socket_fd, char *buffer, int length);
+int getData(int socket_fd, char *buffer);
 int sendInt(int socket_fd, uint32_t tosend);
-int sendData(int socket_fd, char *data, int length);
+int sendData(int socket_fd, char *data);
 void readFromNet(int socket_fd, rm_protocol* );
 void sendStruct(int socket_fd, rm_protocol *data);
 

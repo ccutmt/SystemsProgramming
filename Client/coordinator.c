@@ -1,8 +1,5 @@
 #include "coordinator.h"
 
-int is_master = -1;
-int socket_no = -1;
-
 int initCoordinator(){
 	//Create message queue and register signal
 	if(signal(SIGUSR1, newMsgInQueue) == SIG_ERR)
@@ -34,6 +31,7 @@ int initCoordinator(){
 	int pno = getSharedInt(_header_memory + sizeof(int));
 	int master = getSharedInt(_header_memory);
 
+	is_master = -1;
 	if(master == 0){
 		setSharedInt(_header_memory, getpid());
 		is_master = 0;
@@ -46,109 +44,28 @@ int initCoordinator(){
 	return 0;
 }
 
-void decodeMsgMaster(){
-	rqst_over_queue *msg = receiveMsgQueue(_queue_id);
-	if(msg == NULL)
-		perror("Message was null");
-	else{
-		rm_protocol *tosend = malloc(sizeof(rm_protocol));
-		int request = msg->request;
-
-		switch(request){
-		case MAP: {
-
-			break;
-		}
-		case UNMAP: {
-			break;
-		}
-		case READ: {
-
-			break;
-		}
-		case WRITE: {
-			//Read file part from memory
-			requestRead(sem_data_set);
-
-			_shared_file *read = malloc(sizeof(_shared_file));
-			readSharedData(msg->offset, read);
-
-			releaseRead(sem_data_set);
-
-			tosend->data_length = _DATA_LENGTH;
-			tosend->data = read->data;
-			tosend->filepart = read->fileid;
-			tosend->pid = msg->owner;
-			tosend->error_id = 0;
-			tosend->count = 5;
-			tosend->offset = 0;
-			tosend->path = " ";
-			tosend->path_length = 1;
-			tosend->type = WRITE;
-			break;
-		}
-		case ACK:
-		case ERROR:
-			break;
-		}
-		sendStruct(socket_no, tosend);
-		free(tosend);
-		tosend = readFromNet(socket_no);
-		//actForServerReply(tosend);
-		free(tosend);
-		free(msg);
-	}
-}
-
 void getUpdatedDataFromServer(int filepartid, int offset){
 
 }
 
-rqst_over_queue * actForServerReply(rm_protocol *reply, int prevRequest){
-	int type = reply->type;
-	rqst_over_queue *msg = malloc(sizeof(rqst_over_queue));
-	switch(type){
-	case ACK:{
-		msg->error = 0;
-		msg->offset = reply->filepart;
-		msg->owner = reply->pid;
-		msg->pid = reply->pid;
-		msg->request = ACK;
-		break;
-	}
-	case ERROR:
-	case MAP:
-	case READ:{
-		if(prevRequest == WRITE){
-
-		}
-		//int firstfree = getFirstFreeBlock();
-		requestWrite(sem_data_set);
-		_shared_file *towrite = malloc(sizeof(_shared_file));
-		memcpy(towrite->data, reply->data, _DATA_LENGTH);
-		towrite->fileid = reply->filepart;
-		towrite->pid = 0;
-		towrite->pno = 1;
-		towrite->serverip = 1234; //need to get ip for server
-		free(towrite);
-		releaseWrite(sem_data_set);
-		msg->error = 0;
-		//msg->offset = firstfree;
-		msg->owner = reply->pid;
-		//msg->path = "";
-		msg->pid = reply->pid;
-		msg->request = ACK;
-		break;
-	}
-
-	}
-	return msg;
-}
 
 void newMsgInQueue(int signo){
 	//Signal handler to receive messages on queues
 	if(is_master == 0){
-		decodeMsgMaster();
+		rqst_over_queue msg;
+		rqst_over_queue reply_queue;
+
+		receiveMsgQueue(_queue_id, &msg);
+
+		rm_protocol tosend = msg.message;
+		rm_protocol reply;
+
+		int fd = getServerFd(msg.ipaddress, msg.port);
+		requestServer(&tosend, &reply, fd);
+
+		reply_queue.message = reply;
+		reply_queue.pid = reply.pid;
+		sendMsg(&reply_queue);
 	}
 }
 
@@ -162,48 +79,37 @@ int sendMsg(rqst_over_queue* msgp){
 	}
 }
 
-int decodeReplyProcess(){
-	/*rqst_over_queue *msg = receiveMsgQueue(_queue_id);
-	if(msg == NULL){
-		perror("Message was null");
-	}
-	else{
-		int type = msg->request;
-		switch(type){
-		case ACK: {
-			return msg->offset;
-		}
-		case ERROR:{
-			return -1;
-		}
-		}
-	}*/
-	return -1;
-}
-
 int getFilePartOffset(unsigned long fileid, unsigned long serverip){
 	void * idloc = _data_memory;
 	int count = 0;
-	requestRead(sem_data_set);
 	while(count < 10){
 		if(*(unsigned long*)(idloc + sizeof(int) * 2) == fileid){
 			if(*(unsigned long*)(idloc + (sizeof(int) * 2) + sizeof(unsigned long)) == serverip){
-				releaseRead(sem_data_set);
 				return count;
 			}
 		}
 		idloc += sizeof(_shared_file);
 		count++;
 	}
-	releaseRead(sem_data_set);
+	return -1;
+}
+
+int getFirstFreePart(){
+	int count = 0;
+	void * idloc = _data_memory;
+	while(count < 10){
+		if(*(int*)(idloc + sizeof(int)) == 0){
+			return count;
+		}
+		count++;
+	}
 	return -1;
 }
 
 void destroyCoordinator(){
 	//Consume any messages remaining on queue
-	rqst_over_queue *temp = NULL;
-	while((temp = receiveMsgQueue(_queue_id)) != NULL){
-		free(temp);
+	rqst_over_queue temp;
+	while((receiveMsgQueue(_queue_id, &temp)) != -1){
 	}
 
 	//If this is the last process alive, destroy IPC structures
@@ -233,15 +139,21 @@ void cleanUp(int signo){
 	exit(0);
 }
 
-int getSocket(){
-	return socket_no;
-}
-
-void setSocket(int sock){
-	socket_no = sock;
-}
-
 void requestServer(rm_protocol *tosend, rm_protocol *reply, int fd){
 	sendStruct(fd, tosend);
 	readFromNet(fd, reply);
+}
+
+int makeMap(rm_protocol *reply, struct in_addr ip){
+	int firstfree = getFirstFreePart();
+	if(firstfree != -1){
+		_shared_file towrite;
+		memcpy(&towrite.data, reply->data, _DATA_LENGTH);
+		towrite.fileid = reply->filepart;
+		towrite.pid = 0;
+		towrite.pno = 1;
+		towrite.serverip = ip.s_addr;
+		writeSharedData(&towrite, firstfree);
+	}
+	return firstfree;
 }
