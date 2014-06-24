@@ -21,23 +21,16 @@ void removeQueue(int id){
 	}
 }
 
-int sendMsgQueue(int qid, int dest_pid, int offset, int request, int error){
+int sendMsgQueue(int qid, rqst_over_queue *tosend){
 	int result = -1;
-	rqst_over_queue *msgp = (rqst_over_queue*) malloc(sizeof(rqst_over_queue));
-	msgp->pid = dest_pid;
-	msgp->offset = offset;
-	msgp->error = error;
-	msgp->request = request;
-	result = msgsnd(qid, msgp, sizeof(rqst_over_queue), IPC_NOWAIT);
-	free(msgp);
+	result = msgsnd(qid, tosend, sizeof(rqst_over_queue), IPC_NOWAIT);
+	printf("%i", result);
 	return result;
 }
 
-rqst_over_queue* receiveMsgQueue(int qid){
-	rqst_over_queue *msgp = (rqst_over_queue*) malloc(sizeof(rqst_over_queue));
+int receiveMsgQueue(int qid, rqst_over_queue* msgp){
 	if(msgrcv(qid, msgp, sizeof(rqst_over_queue), getpid(), IPC_NOWAIT) == -1){
-		free(msgp);
-		return NULL;
+		return -1;
 	}
-	return msgp;
+	return 0;
 }

@@ -73,7 +73,7 @@ void requestWrite(int id){
 	sops[0].sem_num = 0;
 	sops[0].sem_op = 0;
 	sops[0].sem_flg = 0;
-	//Wait for readers to become 0
+	//Wait for writers to become 0
 	sops[1].sem_num = 1;
 	sops[1].sem_op = 0;
 	sops[1].sem_flg = 0;

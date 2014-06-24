@@ -36,3 +36,20 @@ void removeMemSeg(int id){
 		perror("Error while removing shared memory");
 	}
 }
+
+int getSharedInt(void* pos){
+	return *(int *) pos;
+}
+
+void setSharedInt(void* pos, int id){
+	*(int*)pos = id;
+}
+
+void writeSharedData(_shared_file* towrite, int offset){
+	void * off = _data_memory + (offset * sizeof(_shared_file));
+	memcpy(off, towrite, sizeof(_shared_file));
+}
+
+void readSharedData(int offset, _shared_file* result){
+	memcpy(result, _data_memory + (sizeof(_shared_file) * offset), sizeof(_shared_file));
+}

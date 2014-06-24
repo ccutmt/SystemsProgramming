@@ -14,7 +14,7 @@
 #include <netinet/in.h>
 
 // Type definition for a connection with a server
-/*struct connection{
+struct connection{
 	struct in_addr ipaddress;
 	int file_descriptor;
 	struct file_entry *next;
@@ -50,7 +50,7 @@ struct rm_list{
 	void *head;
 	int size;
 };
-typedef struct rm_list rm_list;*/
+typedef struct rm_list rm_list;
 
 // Type definition for remote file location
 struct fileloc {

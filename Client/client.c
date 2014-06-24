@@ -8,19 +8,23 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include "coordinator.h"
+#include "fmmap.h"
 
 int main(int argc, char **argv) {
 
 	/*
 	 * Socket creation and connection to server
 	 */
-	/*int socket_fd = socket(AF_INET, SOCK_STREAM, 0);
+	/*int result = initCoordinator();
+		if(result == -1)
+			printf("error");
+
+	int master = getSharedInt(_header_memory);
+	if(master == getpid()){
+	int socket_fd = socket(AF_INET, SOCK_STREAM, 0);
 
 	if (socket_fd < 0)
-		printf("Could not create socket");
-	else
-		printf("Socket Created\n");
+		perror("Could not create socket");
 
 	struct sockaddr_in addr;
 	bzero(&addr, sizeof(addr));
@@ -34,7 +38,9 @@ int main(int argc, char **argv) {
 		printf("%s\n", strerror(res));
 		return -1;
 	} else
-		printf("Connected to Server\n");*/
+		printf("Connected to Server\n");
+	setSocket(socket_fd);
+	}*/
 
 	/*
 	 * Sending of one struct
@@ -47,9 +53,9 @@ int main(int argc, char **argv) {
 	test->path = 0;
 	test->error_id = 0;
 	test->offset = 50;
-	sendStruct(socket_fd, test);*/
+	sendStruct(socket_fd, test);
 
-	//close(socket_fd);
+	close(socket_fd);*/
 
 	/*
 	 * Test master key
@@ -79,7 +85,8 @@ int main(int argc, char **argv) {
 	/*
 	 * Test semaphore
 	 */
-	/*if(initSemaphores() == 0){
+	/*if(initSemaphores() ==
+			if(master != getpid()){0){
 		requestWrite(sem_header_set);
 		printf("requested write");
 		getchar();
@@ -90,18 +97,64 @@ int main(int argc, char **argv) {
 	/*
 	 * Test Queues
 	 */
-	/*int id = getQueueId(MSGQUEUE_KEY);
-	sendMsgQueue(id, getpid(), 1, 2, 0);
+	/*int id = getQueueId(_MSGQUEUE_KEY);
+	rqst_over_queue *send = malloc(sizeof(rqst_over_queue));
+	send->error = 25;
+	send->offset = 2;
+	send->pid = getpid();
+	send->request = 0;
+	sendMsgQueue(id, send);
 	rqst_over_queue *reply = receiveMsgQueue(id);
-	printf("%i", reply->request);
+	printf("%i", reply->error);
+	getchar();
 	removeQueue(id);*/
 
 	/*
 	 * Test coordinator
 	 */
-	int result = initCoordinator();
-	//printf("%i", result);
+
+
+
+
+	/*_shared_file* a = malloc(sizeof(_shared_file));
+	a->data[0] = 'a';
+	a->data[1] = 'b';
+	a->data[2] = '\0';
+	a->fileid = 1;
+	a->pid = getpid();
+	a->pno = 1;
+	a->serverip = 123456;
+	writeSharedData(a,5);
+	free(a);
+
+	requestRead(sem_header_set);
+	master = getSharedInt(_header_memory);
+
+	if(master != getpid()){
+		sendMsg(master, 5 , WRITE, 0);
+		sigset_t myset;
+		sigsuspend(&myset);
+		printf("master is: %i pid: %i", master, getpid());
+		printf("reply was: %i", decodeReplyProcess());
+	}
+	releaseRead(sem_header_set);
+
 	getchar();
+
+
+	if(getSocket() != -1)
+		close(getSocket());*/
+
+	/*
+	 * test library
+	 */
+	struct in_addr ip;
+	ip.s_addr = inet_addr("127.0.0.1");
+	fileloc_t fl;
+	fl.ipaddress = ip;
+	fl.pathname = "ajla";
+	fl.port = 8080;
+	rmmap(fl, 0);
 
 	return 0;
 }
