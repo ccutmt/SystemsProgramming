@@ -9,7 +9,7 @@ typedef struct connections
 
 typedef struct file
 {
-    int fid;
+    int fid ;
     char * pathname;
     FILE * fd;
 }file;
