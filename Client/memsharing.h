@@ -12,8 +12,8 @@
 #define _DATA_LENGTH 256
 
 struct _shared_file{
-	int pid;
-	int pno;
+	unsigned int write_timestamp;
+	unsigned int pno;
 	unsigned long fileid;
 	unsigned long serverip;
 	char data[_DATA_LENGTH];

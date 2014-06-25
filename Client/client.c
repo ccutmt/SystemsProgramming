@@ -154,8 +154,9 @@ int main(int argc, char **argv) {
 	fl.ipaddress = ip;
 	fl.pathname = "ajla";
 	fl.port = 8080;
-	rmmap(fl, 0);
-
+	void *point = rmmap(fl, 0);
+	getchar();
+	rmunmap(point);
 	getchar();
 
 	return 0;

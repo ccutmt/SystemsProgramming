@@ -51,6 +51,10 @@ void getUpdatedDataFromServer(int filepartid, int offset){
 
 void newMsgInQueue(int signo){
 	//Signal handler to receive messages on queues
+	//Needs to add functionality to cater for signals that where blocked
+	sigset_t new, old;
+	sigemptyset (&new);
+	sigprocmask(SIG_BLOCK, &new, &old);
 	if(is_master == 0){
 		rqst_over_queue msg;
 		rqst_over_queue reply_queue;
@@ -67,6 +71,7 @@ void newMsgInQueue(int signo){
 		reply_queue.pid = reply.pid;
 		sendMsg(&reply_queue);
 	}
+	sigprocmask(SIG_BLOCK, &old, NULL);
 }
 
 int sendMsg(rqst_over_queue* msgp){
@@ -83,8 +88,8 @@ int getFilePartOffset(unsigned long fileid, unsigned long serverip){
 	void * idloc = _data_memory;
 	int count = 0;
 	while(count < 10){
-		if(*(unsigned long*)(idloc + sizeof(int) * 2) == fileid){
-			if(*(unsigned long*)(idloc + (sizeof(int) * 2) + sizeof(unsigned long)) == serverip){
+		if(*(unsigned long*)(idloc + sizeof(unsigned int) * 2) == fileid){
+			if(*(unsigned long*)(idloc + (sizeof(unsigned int) * 2) + sizeof(unsigned long)) == serverip){
 				return count;
 			}
 		}
@@ -139,6 +144,23 @@ void cleanUp(int signo){
 	exit(0);
 }
 
+void waitForSignal(){
+	sigset_t mask;
+	sigfillset(&mask);
+	sigdelset(&mask, SIGUSR1);
+	sigsuspend(&mask);
+}
+
+void incrementUsers(int offset){
+	int users = getSharedInt(_data_memory + sizeof(_shared_file) * offset + sizeof(unsigned int));
+	setSharedInt(_data_memory + sizeof(_shared_file) * offset + sizeof(unsigned int), users+1);
+}
+
+void decrementUsers(int offset){
+	int users = getSharedInt(_data_memory + sizeof(_shared_file) * offset + sizeof(unsigned int));
+	setSharedInt(_data_memory + sizeof(_shared_file) * offset + sizeof(unsigned int), users-1);
+}
+
 void requestServer(rm_protocol *tosend, rm_protocol *reply, int fd){
 	sendStruct(fd, tosend);
 	readFromNet(fd, reply);
@@ -150,10 +172,62 @@ int makeMap(rm_protocol *reply, struct in_addr ip){
 		_shared_file towrite;
 		memcpy(&towrite.data, reply->data, _DATA_LENGTH);
 		towrite.fileid = reply->filepart;
-		towrite.pid = 0;
+		towrite.write_timestamp = time(NULL);
 		towrite.pno = 1;
 		towrite.serverip = ip.s_addr;
 		writeSharedData(&towrite, firstfree);
 	}
 	return firstfree;
+}
+
+/*
+ * return of 0 means unmap failed
+ * return of 1 means successful
+ */
+int makeUnmap(int offset, struct in_addr ip, int port){
+	_shared_file *tounmap = malloc(sizeof(_shared_file));
+	readSharedData(offset, tounmap);
+	int users = tounmap->pno;
+	if(users > 1){
+		decrementUsers(offset);
+		return 1;
+	}else{
+		rm_protocol tosend, reply;
+		if(is_master == -1){
+			rqst_over_queue *tosend_queue = malloc(sizeof(rqst_over_queue));
+			rqst_over_queue *reply_queue = malloc(sizeof(rqst_over_queue));
+			makeUnmapRequest(&tosend, tounmap->fileid, getpid());
+
+			requestRead(sem_header_set);
+			int read = getSharedInt(_header_memory);
+			tosend_queue->pid = (long)read;
+			releaseRead(sem_header_set);
+
+			tosend_queue->message = tosend;
+			tosend_queue->ipaddress = ip;
+			tosend_queue->port = port;
+			sendMsg(tosend_queue);
+			free(tosend_queue);
+
+			waitForSignal();
+
+			if(receiveMsgQueue(_queue_id, reply_queue) == 0)
+				memcpy(&reply, &reply_queue->message, sizeof(rm_protocol));
+			else perror("Message not received");
+
+			//free(reply_queue);
+
+		}
+		else{
+			int sfd = getServerFd(ip, port);
+			requestServer(&tosend, &reply, sfd);
+		}
+
+		//clear memory part
+		bzero(_data_memory + (sizeof(_shared_file)*offset), sizeof(_shared_file));
+
+		if(reply.type == ERROR)
+			return 0;
+		else return 1;
+	}
 }

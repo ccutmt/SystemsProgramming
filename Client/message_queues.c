@@ -24,7 +24,6 @@ void removeQueue(int id){
 int sendMsgQueue(int qid, rqst_over_queue *tosend){
 	int result = -1;
 	result = msgsnd(qid, tosend, sizeof(rqst_over_queue), IPC_NOWAIT);
-	printf("%i", result);
 	return result;
 }
 

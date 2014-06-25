@@ -6,6 +6,8 @@ struct map_info{
 	int mapid;
 	ArrayList *offsets;
 	int offset;
+	struct in_addr ip;
+	int port;
 };
 typedef struct map_info map_info;
 
@@ -42,45 +44,39 @@ void * rmmap(fileloc_t location, off_t offset) {
 		tosend_queue->port = location.port;
 		sendMsg(tosend_queue);
 		free(tosend_queue);
+
 		/*
 		 * block until reply
 		 */
-		sigset_t mask;
-
-		sigfillset(&mask);
-		sigdelset(&mask, SIGUSR1);
-		//sigprocmask(SIGUSR1, &mask, &oldmask);
-		sigsuspend(&mask);
+		waitForSignal();
 
 		if(receiveMsgQueue(_queue_id, reply_queue) == 0)
-			memcpy(&reply_queue->message, reply, sizeof(rm_protocol));
+			memcpy(reply, &reply_queue->message, sizeof(rm_protocol));
 		else perror("Message not received");
-		//sigprocmask(SIG_SETMASK, &oldmask)
 	}
 
-	if(reply->type == ERROR)
+	if(reply->type == ERROR){
+		free(reply);
 		return (void*) -1;
+	}
 	else{
-		printf("no error");
 		requestWrite(sem_data_set);
 
-		printf("no not here");
 		int check = getFilePartOffset(reply->filepart, location.ipaddress.s_addr);
 		if(check == -1){
-			printf("not found");
 			check = makeMap(reply, location.ipaddress);
 		}
+		else incrementUsers(check);
 
 		releaseWrite(sem_data_set);
-
-		printf("pid: %i\nFilepart: %ui\nType: %i\nErrorId: %i\nPath: %s\ncount: %i\nData: %s\n", reply->pid, reply->filepart,
-				reply->type , reply->error_id, reply->path, reply->count, reply->data);
 
 		idcount++;
 		map_info *new = malloc(sizeof(map_info));
 		new->mapid = idcount;
 		new->offset = offset;
 		new->offsets = malloc(sizeof(ArrayList));
+		new->port = location.port;
+		memcpy(&new->ip, &location.ipaddress, sizeof(struct in_addr));
 		initArrayList(new->offsets);
 		int *off = malloc(sizeof(int));
 		*off = check;
@@ -91,12 +87,38 @@ void * rmmap(fileloc_t location, off_t offset) {
 			initArrayList(addressmap);
 		}
 		add(addressmap, new);
-		return (void*)&new->mapid;
+
+		free(reply);
+		return (void*) &new->mapid;
 	}
 
 }
 
+
+
 int rmunmap(void *addr){
+	int c = 0;
+	int offset = -1;
+	while(c <= addressmap->current){
+		if(addr == getElement(addressmap, c)){
+			offset = c;
+			break;
+		}
+		c++;
+	}
+
+	if(offset == -1)
+		return -1;
+	else{
+		int i = 0;
+		int removed = 0;
+		map_info* target = getElement(addressmap, offset);
+		requestWrite(sem_data_set);
+		for(i = 0; i <= addressmap->current; i++){
+			removed += makeUnmap(*(int*)getElement(target->offsets, i), target->ip, target->port);
+		}
+		releaseWrite(sem_data_set);
+	}
 
 	return 0;
 }
