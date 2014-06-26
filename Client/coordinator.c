@@ -84,13 +84,15 @@ int sendMsg(rqst_over_queue* msgp){
 	}
 }
 
-int getFilePartOffset(unsigned long fileid, unsigned long serverip){
+int getFilePartOffset(unsigned long fileid, unsigned long serverip, unsigned long offset){
 	void * idloc = _data_memory;
 	int count = 0;
 	while(count < 10){
 		if(*(unsigned long*)(idloc + sizeof(unsigned int) * 2) == fileid){
 			if(*(unsigned long*)(idloc + (sizeof(unsigned int) * 2) + sizeof(unsigned long)) == serverip){
-				return count;
+				if(*(unsigned long*)(idloc + (sizeof(unsigned int) * 2) + sizeof(unsigned long)*2) == offset){
+					return count;
+				}
 			}
 		}
 		idloc += sizeof(_shared_file);
@@ -103,10 +105,11 @@ int getFirstFreePart(){
 	int count = 0;
 	void * idloc = _data_memory;
 	while(count < 10){
-		if(*(int*)(idloc + sizeof(int)) == 0){
+		if(*(unsigned int*)idloc == 0){
 			return count;
 		}
 		count++;
+		idloc += sizeof(_shared_file);
 	}
 	return -1;
 }
@@ -166,7 +169,7 @@ void requestServer(rm_protocol *tosend, rm_protocol *reply, int fd){
 	readFromNet(fd, reply);
 }
 
-int makeMap(rm_protocol *reply, struct in_addr ip){
+int makeMap(rm_protocol *reply, struct in_addr ip, unsigned long off){
 	int firstfree = getFirstFreePart();
 	if(firstfree != -1){
 		_shared_file towrite;
@@ -174,6 +177,7 @@ int makeMap(rm_protocol *reply, struct in_addr ip){
 		towrite.fileid = reply->filepart;
 		towrite.write_timestamp = time(NULL);
 		towrite.pno = 1;
+		towrite.offset = off;
 		towrite.serverip = ip.s_addr;
 		writeSharedData(&towrite, firstfree);
 	}
@@ -193,10 +197,10 @@ int makeUnmap(int offset, struct in_addr ip, int port){
 		return 1;
 	}else{
 		rm_protocol tosend, reply;
+		makeUnmapRequest(&tosend, tounmap->fileid, getpid());
 		if(is_master == -1){
 			rqst_over_queue *tosend_queue = malloc(sizeof(rqst_over_queue));
 			rqst_over_queue *reply_queue = malloc(sizeof(rqst_over_queue));
-			makeUnmapRequest(&tosend, tounmap->fileid, getpid());
 
 			requestRead(sem_header_set);
 			int read = getSharedInt(_header_memory);
@@ -230,4 +234,38 @@ int makeUnmap(int offset, struct in_addr ip, int port){
 			return 0;
 		else return 1;
 	}
+}
+
+int makeRead(int fileid, int realoff, struct in_addr ip, int port){
+	int memloc = getFilePartOffset(fileid, ip.s_addr, realoff);
+	if(memloc == -1){
+		rm_protocol tosend, reply;
+		makeReadRequest(&tosend, getpid(), fileid, realoff, _DATA_LENGTH);
+		if(is_master == 0){
+			requestServer(&tosend, &reply, getServerFd(ip, port));
+		}else{
+			rqst_over_queue *tosend_queue = malloc(sizeof(rqst_over_queue));
+			rqst_over_queue *reply_queue = malloc(sizeof(rqst_over_queue));
+
+			requestRead(sem_header_set);
+			int read = getSharedInt(_header_memory);
+			tosend_queue->pid = (long)read;
+			releaseRead(sem_header_set);
+
+			tosend_queue->message = tosend;
+			tosend_queue->ipaddress = ip;
+			tosend_queue->port = port;
+			sendMsg(tosend_queue);
+			free(tosend_queue);
+
+			waitForSignal();
+
+			if(receiveMsgQueue(_queue_id, reply_queue) == 0)
+				memcpy(&reply, &reply_queue->message, sizeof(rm_protocol));
+			else perror("Message not received");
+		}
+		memloc = makeMap(&reply, ip, realoff);
+	}
+	else incrementUsers(memloc);
+	return memloc;
 }

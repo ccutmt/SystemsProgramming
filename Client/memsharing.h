@@ -16,6 +16,7 @@ struct _shared_file{
 	unsigned int pno;
 	unsigned long fileid;
 	unsigned long serverip;
+	unsigned long offset;
 	char data[_DATA_LENGTH];
 };
 typedef struct _shared_file _shared_file;

@@ -156,6 +156,10 @@ int main(int argc, char **argv) {
 	fl.port = 8080;
 	void *point = rmmap(fl, 0);
 	getchar();
+	char *buff = malloc(sizeof(char) * 513);
+	mread(point, 259, buff, 513);
+	getchar();
+	printf("before unmap");
 	rmunmap(point);
 	getchar();
 
