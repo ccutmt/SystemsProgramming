@@ -24,6 +24,7 @@ void decrementUsers(int offset);
 int makeMap(rm_protocol *reply, struct in_addr ip, unsigned long off);
 int makeUnmap(int offset, struct in_addr ip, int port);
 int makeRead(int fileid, int realoff, struct in_addr ip, int port);
+int makeWrite(int fileid, struct in_addr ip, int port);
 
 /*
  * Message queue methods

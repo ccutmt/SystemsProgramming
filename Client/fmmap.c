@@ -194,6 +194,119 @@ ssize_t mread(void *addr, off_t offset, void *buff, size_t count){
 	return count;
 }
 
+ssize_t mwrite(void *addr, off_t offset, void *buff, size_t count){
+	int c = 0;
+	int off = -1;
+	while(c <= addressmap->current){
+		if(addr == getElement(addressmap, c)){
+			off = c;
+			break;
+		}
+		c++;
+	}
+
+	if(off == -1)
+		return -1;
+	else{
+		int requests = (count + _DATA_LENGTH - 1) / _DATA_LENGTH;
+		int i;
+		map_info *mapping = getElement(addressmap, off);
+		unsigned long mapped_offset = mapping->offset;
+		unsigned long new_offset = mapped_offset + offset;
+		unsigned long temp_offset = new_offset;
+		unsigned long remaining = count;
+		unsigned long curr_off;
+
+		requestWrite(sem_data_set);
+
+		for(i = 0; i < requests; i++){
+			unsigned long start_offset = ((new_offset + (_DATA_LENGTH * i))/_DATA_LENGTH) * _DATA_LENGTH ;
+			int writeto = getFilePartOffset(mapping->fileid, mapping->ip.s_addr,start_offset);
+
+			if(writeto == -1){
+				releaseWrite(sem_data_set);
+				return -1;
+			}
+			else{
+				//Check if file part is read by user
+				int c = 0;
+				int off = -1;
+				while(c <= mapping->offsets->current){
+					map_part_info *query = getElement(mapping->offsets, c);
+					if(writeto == query->part_offset){
+						off = c;
+						break;
+					}
+					c++;
+				}
+
+				//If no entries found, create one. Otherwise, update timestamp
+				if(off == -1){
+					releaseWrite(sem_data_set);
+					return -1;
+				}else{
+					map_part_info *toupdate = getElement(mapping->offsets, off);
+					_shared_file read;
+					readSharedData(writeto, &read);
+
+					if(read.write_timestamp > toupdate->timestamp){
+						releaseWrite(sem_data_set);
+						return -1;
+					}else{
+						toupdate->timestamp = time(NULL);
+						read.write_timestamp = toupdate->timestamp;
+
+						unsigned long tocopy = 0;
+
+						//copy data into array
+						long long diff = remaining - _DATA_LENGTH;
+						if(diff < 0){
+							tocopy = remaining;
+						}
+						else tocopy = _DATA_LENGTH;
+
+						curr_off = temp_offset - start_offset;
+
+						memcpy(&read.data[curr_off], buff + (count - remaining), tocopy);
+						remaining -= tocopy;
+						temp_offset += tocopy - curr_off;
+
+						rm_protocol tosend, reply;
+						makeWriteRequest(&tosend, mapping->fileid, getpid(), read.data, start_offset, _DATA_LENGTH);
+						if(is_master == 0){
+							requestServer(&tosend, &reply, getServerFd(mapping->ip, mapping->port));
+						}else{
+							rqst_over_queue *tosend_queue = malloc(sizeof(rqst_over_queue));
+							rqst_over_queue *reply_queue = malloc(sizeof(rqst_over_queue));
+
+							requestRead(sem_header_set);
+							int read = getSharedInt(_header_memory);
+							tosend_queue->pid = (long)read;
+							releaseRead(sem_header_set);
+
+							tosend_queue->message = tosend;
+							tosend_queue->ipaddress = mapping->ip;
+							tosend_queue->port = mapping->port;
+							sendMsg(tosend_queue);
+							free(tosend_queue);
+
+							waitForSignal();
+
+							if(receiveMsgQueue(_queue_id, reply_queue) == 0)
+								memcpy(&reply, &reply_queue->message, sizeof(rm_protocol));
+							else perror("Message not received");
+						}
+					}
+
+				}
+			}
+		}
+
+		releaseWrite(sem_data_set);
+	}
+	return count;
+}
+
 int rmunmap(void *addr){
 	int c = 0;
 	int offset = -1;

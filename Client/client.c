@@ -157,7 +157,9 @@ int main(int argc, char **argv) {
 	void *point = rmmap(fl, 0);
 	getchar();
 	char *buff = malloc(sizeof(char) * 513);
-	mread(point, 259, buff, 513);
+	mread(point, 512, buff, 513);
+	getchar();
+	printf("written: %i", mwrite(point, 259, buff, 513));
 	getchar();
 	printf("before unmap");
 	rmunmap(point);
