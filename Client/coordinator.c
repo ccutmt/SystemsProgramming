@@ -37,24 +37,88 @@ int initCoordinator(){
 		is_master = 0;
 	}
 	setSharedInt(_header_memory + sizeof(int), pno+1);
+
 	releaseWrite(sem_header_set);
+
+	addressmap = NULL;
+	idcount = -1;
+
+	sigemptyset (&all);
+	sigfillset(&sigusr1only);
+	sigdelset(&sigusr1only, SIGUSR1);
 
 	atexit(destroyCoordinator);
 
 	return 0;
 }
 
-void getUpdatedDataFromServer(int filepartid, int offset){
-
+void getUpdatedDataFromServer(int fileid, unsigned long offset, _shared_file *read, struct in_addr ip, int port, int off_mem){
+	rm_protocol tosend, reply;
+	makeReadRequest(&tosend, getpid(), fileid, offset, _DATA_LENGTH);
+	makeRequest(&tosend, &reply, ip, port);
+	memcpy(read->data, reply.data, _DATA_LENGTH);
+	writeSharedData(read, off_mem);
 }
 
+int getMappingByAddr(void *addr){
+	int c = 0;
+	while(c <= addressmap->current){
+		if(addr == getElement(addressmap, c)){
+			return c;
+		}
+		c++;
+	}
+	return -1;
+}
+
+int checkIfRead(map_info *mapping, int newmap){
+	int c = 0;
+	while(c <= mapping->offsets->current){
+		map_part_info *query = getElement(mapping->offsets, c);
+		if(newmap == query->part_offset){
+			return c;
+		}
+		c++;
+	}
+	return -1;
+}
+
+void makeRequest(rm_protocol *tosend, rm_protocol *reply, struct in_addr ip, int port){
+	requestWrite(sem_header_set);
+	int read = getSharedInt(_header_memory);
+	if(read == 0){
+		setSharedInt(_header_memory, getpid());
+		is_master = 0;
+	}
+	releaseWrite(sem_header_set);
+
+	if(is_master == 0){
+		requestServer(tosend, reply, getServerFd(ip, port));
+	}else{
+		rqst_over_queue *tosend_queue = malloc(sizeof(rqst_over_queue));
+		rqst_over_queue *reply_queue = malloc(sizeof(rqst_over_queue));
+
+		tosend_queue->message = *tosend;
+		tosend_queue->ipaddress = ip;
+		tosend_queue->port = port;
+		tosend_queue->pid = read;
+		sendMsg(tosend_queue);
+		free(tosend_queue);
+
+		waitForSignal();
+
+		if(receiveMsgQueue(_queue_id, reply_queue) == 0)
+			memcpy(reply, &reply_queue->message, sizeof(rm_protocol));
+		else perror("Message not received");
+	}
+}
 
 void newMsgInQueue(int signo){
 	//Signal handler to receive messages on queues
 	//Needs to add functionality to cater for signals that where blocked
 	sigset_t new, old;
-	sigemptyset (&new);
-	sigprocmask(SIG_BLOCK, &new, &old);
+	sigfillset (&new);
+	sigprocmask(SIG_SETMASK, &new, &old);
 	if(is_master == 0){
 		rqst_over_queue msg;
 		rqst_over_queue reply_queue;
@@ -71,7 +135,7 @@ void newMsgInQueue(int signo){
 		reply_queue.pid = reply.pid;
 		sendMsg(&reply_queue);
 	}
-	sigprocmask(SIG_BLOCK, &old, NULL);
+	sigprocmask(SIG_SETMASK, &old, &new);
 }
 
 int sendMsg(rqst_over_queue* msgp){
@@ -119,6 +183,19 @@ void destroyCoordinator(){
 	rqst_over_queue temp;
 	while((receiveMsgQueue(_queue_id, &temp)) != -1){
 	}
+
+	//Unmap all mapped parts
+	int i, j;
+	for(i = 0; i <= addressmap->current; i++){
+		map_info* target = getElement(addressmap, i);
+		for(j = 0; j <= target->offsets->current; j++){
+			map_part_info *part = (map_part_info*)(getElement(target->offsets, j));
+			makeUnmap(part->part_offset, target->ip, target->port);
+			free(target->offsets->elements);
+		}
+		free(target->offsets);
+	}
+	free(addressmap);
 
 	//If this is the last process alive, destroy IPC structures
 	requestWrite(sem_header_set);
@@ -198,34 +275,7 @@ int makeUnmap(int offset, struct in_addr ip, int port){
 	}else{
 		rm_protocol tosend, reply;
 		makeUnmapRequest(&tosend, tounmap->fileid, getpid());
-		if(is_master == -1){
-			rqst_over_queue *tosend_queue = malloc(sizeof(rqst_over_queue));
-			rqst_over_queue *reply_queue = malloc(sizeof(rqst_over_queue));
-
-			requestRead(sem_header_set);
-			int read = getSharedInt(_header_memory);
-			tosend_queue->pid = (long)read;
-			releaseRead(sem_header_set);
-
-			tosend_queue->message = tosend;
-			tosend_queue->ipaddress = ip;
-			tosend_queue->port = port;
-			sendMsg(tosend_queue);
-			free(tosend_queue);
-
-			waitForSignal();
-
-			if(receiveMsgQueue(_queue_id, reply_queue) == 0)
-				memcpy(&reply, &reply_queue->message, sizeof(rm_protocol));
-			else perror("Message not received");
-
-			//free(reply_queue);
-
-		}
-		else{
-			int sfd = getServerFd(ip, port);
-			requestServer(&tosend, &reply, sfd);
-		}
+		makeRequest(&tosend, &reply, ip, port);
 
 		//clear memory part
 		bzero(_data_memory + (sizeof(_shared_file)*offset), sizeof(_shared_file));
@@ -236,34 +286,12 @@ int makeUnmap(int offset, struct in_addr ip, int port){
 	}
 }
 
-int makeRead(int fileid, int realoff, struct in_addr ip, int port){
+int makeRead(int fileid, unsigned long realoff, struct in_addr ip, int port){
 	int memloc = getFilePartOffset(fileid, ip.s_addr, realoff);
 	if(memloc == -1){
 		rm_protocol tosend, reply;
 		makeReadRequest(&tosend, getpid(), fileid, realoff, _DATA_LENGTH);
-		if(is_master == 0){
-			requestServer(&tosend, &reply, getServerFd(ip, port));
-		}else{
-			rqst_over_queue *tosend_queue = malloc(sizeof(rqst_over_queue));
-			rqst_over_queue *reply_queue = malloc(sizeof(rqst_over_queue));
-
-			requestRead(sem_header_set);
-			int read = getSharedInt(_header_memory);
-			tosend_queue->pid = (long)read;
-			releaseRead(sem_header_set);
-
-			tosend_queue->message = tosend;
-			tosend_queue->ipaddress = ip;
-			tosend_queue->port = port;
-			sendMsg(tosend_queue);
-			free(tosend_queue);
-
-			waitForSignal();
-
-			if(receiveMsgQueue(_queue_id, reply_queue) == 0)
-				memcpy(&reply, &reply_queue->message, sizeof(rm_protocol));
-			else perror("Message not received");
-		}
+		makeRequest(&tosend, &reply, ip, port);
 		memloc = makeMap(&reply, ip, realoff);
 	}
 	else incrementUsers(memloc);

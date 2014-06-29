@@ -2,27 +2,17 @@
 #include "coordinator.h"
 #include "ArrayList.h"
 
-struct map_info{
-	int mapid;				//Unique id given to user
-	unsigned int fileid;	//File id given by server
-	ArrayList *offsets;		//List of map_part_info
-	int offset;				//Offset requested by user
-	struct in_addr ip;
-	int port;
-};
-typedef struct map_info map_info;
-
-typedef struct map_part_info{
-	unsigned long part_offset;		//Offset in shared memory
-	unsigned int timestamp;			//Last read time
-
-} map_part_info;
-
-ArrayList *addressmap = NULL;
 int init = -1;
 
-//used to generate ids for mapping. These are returned to the user
-int idcount = -1;
+void setSignalMaskUsr1Only(){
+	sigset_t old;
+	sigprocmask(SIG_SETMASK, &sigusr1only, &old);
+}
+
+void unblockAllSignals(){
+	sigset_t old;
+	sigprocmask(SIG_SETMASK, &all, &old);
+}
 
 void * rmmap(fileloc_t location, off_t offset) {
 	if(init == -1){
@@ -35,40 +25,16 @@ void * rmmap(fileloc_t location, off_t offset) {
 	rm_protocol *reply = malloc(sizeof(rm_protocol));
 	makeMapRequest(tosend, getpid(), location.pathname, offset);
 
-	if(is_master == 0){
-		int sfd = getServerFd(location.ipaddress, location.port);
-		requestServer(tosend, reply, sfd);
-	}
-	else{
-		rqst_over_queue *tosend_queue = malloc(sizeof(rqst_over_queue));
-		rqst_over_queue *reply_queue = malloc(sizeof(rqst_over_queue));
-
-		requestRead(sem_header_set);
-		int read = getSharedInt(_header_memory);
-		tosend_queue->pid = (long)read;
-		releaseRead(sem_header_set);
-
-		tosend_queue->message = *tosend;
-		tosend_queue->ipaddress = location.ipaddress;
-		tosend_queue->port = location.port;
-		sendMsg(tosend_queue);
-		free(tosend_queue);
-
-		/*
-		 * block until reply
-		 */
-		waitForSignal();
-
-		if(receiveMsgQueue(_queue_id, reply_queue) == 0)
-			memcpy(reply, &reply_queue->message, sizeof(rm_protocol));
-		else perror("Message not received");
-	}
+	setSignalMaskUsr1Only();
+	makeRequest(tosend, reply, location.ipaddress, location.port);
+	unblockAllSignals();
 
 	if(reply->type == ERROR){
 		free(reply);
 		return (void*) -1;
 	}
 	else{
+		setSignalMaskUsr1Only();
 		requestWrite(sem_data_set);
 
 		unsigned long real_offset = offset / _DATA_LENGTH;
@@ -81,6 +47,7 @@ void * rmmap(fileloc_t location, off_t offset) {
 		else incrementUsers(check);
 
 		releaseWrite(sem_data_set);
+		unblockAllSignals();
 
 		idcount++;
 
@@ -114,15 +81,11 @@ void * rmmap(fileloc_t location, off_t offset) {
 }
 
 ssize_t mread(void *addr, off_t offset, void *buff, size_t count){
-	int c = 0;
-	int off = -1;
-	while(c <= addressmap->current){
-		if(addr == getElement(addressmap, c)){
-			off = c;
-			break;
-		}
-		c++;
+	if(init == -1){
+		return -1;
 	}
+
+	int off = getMappingByAddr(addr);
 
 	if(off == -1)
 		return -1;
@@ -136,6 +99,7 @@ ssize_t mread(void *addr, off_t offset, void *buff, size_t count){
 		unsigned long remaining = count;
 		unsigned long curr_off;
 
+		setSignalMaskUsr1Only();
 		requestWrite(sem_data_set);
 
 		for(i = 0; i < requests; i++){
@@ -143,20 +107,12 @@ ssize_t mread(void *addr, off_t offset, void *buff, size_t count){
 			int newmap = makeRead(mapping->fileid, start_offset, mapping->ip, mapping->port);
 			if(newmap == -1){
 				releaseWrite(sem_data_set);
+				unblockAllSignals();
 				return -1;
 			}
 			else{
 				//Search for entry
-				int c = 0;
-				int off = -1;
-				while(c <= mapping->offsets->current){
-					map_part_info *query = getElement(mapping->offsets, c);
-					if(newmap == query->part_offset){
-						off = c;
-						break;
-					}
-					c++;
-				}
+				int off = checkIfRead(mapping, newmap);
 
 				//If no entries found, create one. Otherwise, update timestamp
 				if(off == -1){
@@ -190,20 +146,17 @@ ssize_t mread(void *addr, off_t offset, void *buff, size_t count){
 		}
 
 		releaseWrite(sem_data_set);
+		unblockAllSignals();
 	}
 	return count;
 }
 
 ssize_t mwrite(void *addr, off_t offset, void *buff, size_t count){
-	int c = 0;
-	int off = -1;
-	while(c <= addressmap->current){
-		if(addr == getElement(addressmap, c)){
-			off = c;
-			break;
-		}
-		c++;
+	if(init == -1){
+		return -1;
 	}
+
+	int off = getMappingByAddr(addr);
 
 	if(off == -1)
 		return -1;
@@ -217,6 +170,7 @@ ssize_t mwrite(void *addr, off_t offset, void *buff, size_t count){
 		unsigned long remaining = count;
 		unsigned long curr_off;
 
+		setSignalMaskUsr1Only();
 		requestWrite(sem_data_set);
 
 		for(i = 0; i < requests; i++){
@@ -225,25 +179,15 @@ ssize_t mwrite(void *addr, off_t offset, void *buff, size_t count){
 
 			if(writeto == -1){
 				releaseWrite(sem_data_set);
-				return -1;
+				return count - remaining;
 			}
 			else{
-				//Check if file part is read by user
-				int c = 0;
-				int off = -1;
-				while(c <= mapping->offsets->current){
-					map_part_info *query = getElement(mapping->offsets, c);
-					if(writeto == query->part_offset){
-						off = c;
-						break;
-					}
-					c++;
-				}
+				int off = checkIfRead(mapping, writeto);
 
 				//If no entries found, create one. Otherwise, update timestamp
 				if(off == -1){
 					releaseWrite(sem_data_set);
-					return -1;
+					return count - remaining;
 				}else{
 					map_part_info *toupdate = getElement(mapping->offsets, off);
 					_shared_file read;
@@ -251,7 +195,7 @@ ssize_t mwrite(void *addr, off_t offset, void *buff, size_t count){
 
 					if(read.write_timestamp > toupdate->timestamp){
 						releaseWrite(sem_data_set);
-						return -1;
+						return count - remaining;
 					}else{
 						toupdate->timestamp = time(NULL);
 						read.write_timestamp = toupdate->timestamp;
@@ -273,50 +217,28 @@ ssize_t mwrite(void *addr, off_t offset, void *buff, size_t count){
 
 						rm_protocol tosend, reply;
 						makeWriteRequest(&tosend, mapping->fileid, getpid(), read.data, start_offset, _DATA_LENGTH);
-						if(is_master == 0){
-							requestServer(&tosend, &reply, getServerFd(mapping->ip, mapping->port));
-						}else{
-							rqst_over_queue *tosend_queue = malloc(sizeof(rqst_over_queue));
-							rqst_over_queue *reply_queue = malloc(sizeof(rqst_over_queue));
+						makeRequest(&tosend, &reply, mapping->ip, mapping->port);
 
-							requestRead(sem_header_set);
-							int read = getSharedInt(_header_memory);
-							tosend_queue->pid = (long)read;
-							releaseRead(sem_header_set);
-
-							tosend_queue->message = tosend;
-							tosend_queue->ipaddress = mapping->ip;
-							tosend_queue->port = mapping->port;
-							sendMsg(tosend_queue);
-							free(tosend_queue);
-
-							waitForSignal();
-
-							if(receiveMsgQueue(_queue_id, reply_queue) == 0)
-								memcpy(&reply, &reply_queue->message, sizeof(rm_protocol));
-							else perror("Message not received");
+						if(reply.type == ERROR){
+							getUpdatedDataFromServer(mapping->fileid, start_offset, &read, mapping->ip, mapping->port, writeto);
 						}
 					}
-
 				}
 			}
 		}
 
 		releaseWrite(sem_data_set);
+		unblockAllSignals();
 	}
 	return count;
 }
 
 int rmunmap(void *addr){
-	int c = 0;
-	int offset = -1;
-	while(c <= addressmap->current){
-		if(addr == getElement(addressmap, c)){
-			offset = c;
-			break;
-		}
-		c++;
+	if(init == -1){
+		return -1;
 	}
+
+	int offset = getMappingByAddr(addr);
 
 	if(offset == -1)
 		return -1;
@@ -324,12 +246,14 @@ int rmunmap(void *addr){
 		int i = 0;
 		int removed = 0;
 		map_info* target = getElement(addressmap, offset);
+		setSignalMaskUsr1Only();
 		requestWrite(sem_data_set);
-		for(i = 0; i <= addressmap->current; i++){
+		for(i = 0; i <= target->offsets->current; i++){
 			map_part_info *part = (map_part_info*)(getElement(target->offsets, i));
 			removed += makeUnmap(part->part_offset, target->ip, target->port);
 		}
 		releaseWrite(sem_data_set);
+		unblockAllSignals();
 	}
 
 	return 0;

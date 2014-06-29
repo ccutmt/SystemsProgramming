@@ -40,14 +40,9 @@ void readFromNet(int socket_fd, rm_protocol* mystruct) {
 	mystruct->filepart = getInt(socket_fd);
 	mystruct->type = getInt(socket_fd);
 	mystruct->error_id = getInt(socket_fd);
-	//mystruct->path_length = getInt(socket_fd);
-	//char *path = malloc(sizeof(char) * mystruct->path_length);
 	getData(socket_fd, mystruct->path);
-	//mystruct->path = path;
 	mystruct->offset = getInt(socket_fd);
 	mystruct->count = getInt(socket_fd);
-	//mystruct->data_length = getInt(socket_fd);
-	//mystruct->data = malloc(sizeof(char) * mystruct->data_length);
 	getData(socket_fd, mystruct->data);
 }
 
@@ -56,11 +51,9 @@ void sendStruct(int socket_fd, rm_protocol *data) {
 	sendInt(socket_fd, data->filepart);
 	sendInt(socket_fd, data->type);
 	sendInt(socket_fd, data->error_id);
-	//sendInt(socket_fd, data->path_length);
 	sendData(socket_fd, data->path);
 	sendInt(socket_fd, data->offset);
 	sendInt(socket_fd, data->count);
-	//sendInt(socket_fd, data->data_length);
 	sendData(socket_fd, data->data);
 }
 
@@ -108,52 +101,36 @@ int getServerFd(struct in_addr ip, int port){
 
 void makeMapRequest(rm_protocol *tosend, int pid, char *path, int offset){
 	tosend->count = 0;
-	//tosend->data = "";
-	//tosend->data_length = 0;
 	tosend->error_id = 0;
 	tosend->filepart = 0;
 	tosend->offset = offset;
 	memcpy(tosend->path, path, _MAXLENGTH * sizeof(char));
-	//tosend->path = path;
-	//tosend->path_length = strlen(path);
 	tosend->pid = pid;
 	tosend->type = MAP;
 }
 
 void makeReadRequest(rm_protocol *tosend, int pid, uint32_t filepartid, int offset, int count){
 	tosend->count = count;
-	//tosend->data = "";
-	//tosend->data_length = 0;
 	tosend->error_id = 0;
 	tosend->filepart = filepartid;
 	tosend->offset = offset;
-	//tosend->path = "";
-	//tosend->path_length = 0;
 	tosend->pid = pid;
 	tosend->type = READ;
 }
 void makeWriteRequest(rm_protocol *tosend, uint32_t fpart, int pid, char *data, int offset, int count){
 	tosend->count = count;
 	memcpy(tosend->data, data, _MAXLENGTH * sizeof(char));
-	//tosend->data = data;
-	//tosend->data_length = strlen(data);
 	tosend->error_id = 0;
 	tosend->filepart = fpart;
 	tosend->offset = offset;
-	//tosend->path = "";
-	//tosend->path_length = 0;
 	tosend->pid = pid;
 	tosend->type = WRITE;
 }
 void makeUnmapRequest(rm_protocol *tosend, uint32_t fpart, int pid){
 	tosend->count = 0;
-	//tosend->data = "";
-	//tosend->data_length = 0;
 	tosend->error_id = 0;
 	tosend->filepart = fpart;
 	tosend->offset = 0;
-	//tosend->path = "";
-	//tosend->path_length = 0;
 	tosend->pid = pid;
 	tosend->type = UNMAP;
 }
