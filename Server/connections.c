@@ -25,6 +25,19 @@ connection * getConnectionByIp(unsigned long ip){
 	return result;
 }
 
+connection * getConnectionByFd(int fd){
+	int c = 0;
+	connection * result = NULL;
+	while(c <= connections->current){
+		connection * temp = getElement(connections, c);
+		if(temp->fd == fd){
+			return temp;
+		}
+		c++;
+	}
+	return result;
+}
+
 int getConnectionOffset(connection *con){
 	int c = 0;
 	while(c <= connections->current){

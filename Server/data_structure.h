@@ -23,19 +23,20 @@ typedef struct rmfile
     char * pathname;
     int fd;
     ArrayList * fileparts;
-}rmfile;
+    unsigned long fileid;
+} rmfile;
 
-ArrayList * files;
-
-int isValid(int fd, filepart * part);
+void initDataStructure();
 filepart * getFilePart(off_t start_offset, rmfile * file);
 rmfile * getFile(char *path);
+rmfile * getFileById(unsigned long id);
 void setLastWriter(int user_fd, filepart *part);
 int getUserInfoOffset(connection *rem, filepart *fp);
 int getFilePartOffset(filepart * rem, rmfile *file);
 int getRmfileOffset(rmfile *rem);
-void unmapRequest(char * path, off_t offset, connection *conn);
-void mapRequest(char * path, off_t offset, connection *conn, char *buff);
-void readRequest(char * path, off_t offset, size_t length, char * buff, connection *conn);
+void unmapRequest(unsigned long id, off_t offset, connection *conn);
+void mapRequest(char *path, off_t offset, connection *conn, char *buff);
+void readRequest(unsigned long id, off_t offset, size_t length, char * buff, connection *conn);
+void writeRequest(unsigned long id, off_t offset, size_t length, char * buff, connection *conn);
 
 #endif /* DATA_STRUCTURE_H_ */

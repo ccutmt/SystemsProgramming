@@ -15,5 +15,6 @@ ArrayList *connections;
 void addConnection(int fd, unsigned long ip);
 connection * getConnectionByIp(unsigned long ip);
 int getConnectionOffset(connection * c);
+connection * getConnectionByFd(int fd);
 
 #endif /* CONNECTIONS_H_ */

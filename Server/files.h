@@ -11,5 +11,6 @@
 int openFile(char* pathname);
 int closeFile(int fd);
 int readFile(char* buff, size_t length, int fd, off_t offset);
+int writeFile(char *buff, size_t length, int fd, off_t offset);
 
 #endif 

@@ -35,3 +35,26 @@ int readFile(char* buff, size_t length, int fd, off_t offset)
 		return 0;
 	}
 }
+
+int writeFile(char *buff, size_t length, int fd, off_t offset){
+	off_t check;
+	ssize_t bytes;
+
+	check = lseek(fd, offset, SEEK_SET);
+
+	if(check == -1)
+	{
+		return -1;
+	}
+
+	bytes = write(fd, buff, length);
+
+	if(bytes == -1)
+	{
+		return -1;
+	}
+	else
+	{
+		return 0;
+	}
+}
