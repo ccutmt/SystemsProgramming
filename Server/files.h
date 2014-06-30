@@ -6,15 +6,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <stdio.h>
-#include "ArrayList.h"
-
-typedef struct file
-{
-    char * pathname;
-    int fd;
-}file;
-
-ArrayList * Files;
+#include <stdlib.h>
 
 int openFile(char* pathname);
 int closeFile(int fd);

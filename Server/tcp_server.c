@@ -1,17 +1,4 @@
 #include "tcp_server.h"
-<<<<<<< HEAD
-#include "ArrayList.h"
-#include <errno.h>
-#include "files.h"
-
-#define ACK 1 
-#define MAP 2 
-#define UNMAP 3 
-#define READ 4
-#define WRITE 5 
-#define ERROR 6
-=======
->>>>>>> 4fa160a4e2221f83d6864262a38aab32b479afff
 
 ArrayList * Files = NULL;
 
@@ -43,49 +30,6 @@ int main( int argc, char *argv[] )
 		exit(1);
 	}
 
-<<<<<<< HEAD
-    // If connection is established then start communicating 
-    /*rm_protocol *message;
-    message = readFromNet(newsockfd);
-    printf("%i %i %i %s", message->type, message->offset, message->data_length ,message->data);*/
-    /*
-     * Read from network
-     */
-    /*rm_protocol *message;
-    message = readFromNet(newsockfd);
-    printf("%i %i", message->type, message->offset);*/
-    
-    char *file_name = "FILE_1.txt";
-    //printf("\nEnter name of file: ");
-    //scanf("%s", file_name);
-    if (openFile(file_name) > 0)
-    {
-	printf("File Opened.\n");
-    }
-    else
-	printf("Error on opening.\n");
-	
-    file *f = (file*) getElement(file, 0);
-    if(closeFile(f->fd) > 0)
-	printf("File Closed.\n");
-    else
-	printf("Error on closing.\n");
-    
-    // All done, close sockets
-    //close(newsockfd);
-    //close(sockfd);
-    return 0; 
-}
-
-/*void openFile(char f[])
-{
-   if(Files == NULL)
-   {
-	Files = malloc(sizeof(ArrayList));
-	initArrayList(Files);
-    }
-    file * file = malloc(sizeof(file));
-=======
 	// Start listening for the clients, here process will
 	// go in sleep mode and will wait for the incoming connection
 	listen(sockfd,10);
@@ -95,7 +39,6 @@ int main( int argc, char *argv[] )
 	FD_ZERO(&readset);
 	FD_SET(sockfd, &readset);
 	//printf("Sockfd: %i", sockfd);
->>>>>>> 4fa160a4e2221f83d6864262a38aab32b479afff
 
 	//printf("before loop");
 	maxfd = sockfd;
@@ -169,12 +112,6 @@ printf("%i %i %i %s", message->type, message->offset, message->data_length ,mess
 message = readFromNet(newsockfd);
 printf("%i %i", message->type, message->offset);*/
 
-<<<<<<< HEAD
-void closeFile(FILE * f)
-{
-	fclose(f);
-}*/
-=======
 	/* char file_name[10];
 printf("\nEnter name of file: ");
 scanf("%s", file_name);
@@ -185,7 +122,6 @@ openFile(file_name);*/
 	close(sockfd);
 	return 0;
 }
->>>>>>> 4fa160a4e2221f83d6864262a38aab32b479afff
 
 int acceptConnection(int socket, fd_set *listening){
 	struct sockaddr_in *cli_addr = malloc(sizeof(struct sockaddr_in));

@@ -1,11 +1,9 @@
 #ifndef TCP_SERVER_H
 #define TCP_SERVER_H
 
-typedef struct connections
-{
-    int id;
-    unsigned long ip;	
-}connections;
+#include "net_protocol.h"
+
+int maxfd;
 
 int acceptConnection(int socket, fd_set *listening);
 

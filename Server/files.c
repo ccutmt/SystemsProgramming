@@ -3,27 +3,8 @@
 
 int openFile(char* pathname)
 {
-   	if(Files == NULL)
-   	{
-		Files = malloc(sizeof(ArrayList));
-		initArrayList(Files);
-    	}
-    	file * file = malloc(sizeof(file));
-
-	int fin;
-	fin = open(pathname, O_RDWR);
-    	if(fin == -1)
-    	{
-		return -1;
-    	}
-    	else
-    	{
-    		file->fd = fin;
-		file->pathname = pathname;
-    		add(Files, file);
-
-		return fin;
-	}
+	int fin = open(pathname, O_RDWR);
+	return fin;
 }
 
 int closeFile(int fd)
