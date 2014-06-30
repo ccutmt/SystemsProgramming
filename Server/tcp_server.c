@@ -8,6 +8,7 @@
 #include "tcp_server.h"
 #include "ArrayList.h"
 #include <errno.h>
+#include "files.h"
 
 #define ACK 1 
 #define MAP 2 
@@ -90,10 +91,21 @@ int main( int argc, char *argv[] )
     message = readFromNet(newsockfd);
     printf("%i %i", message->type, message->offset);*/
     
-    char file_name[10];
-    printf("\nEnter name of file: ");
-    scanf("%s", file_name);
-    openFile(file_name);
+    char *file_name = "FILE_1.txt";
+    //printf("\nEnter name of file: ");
+    //scanf("%s", file_name);
+    if (openFile(file_name) > 0)
+    {
+	printf("File Opened.\n");
+    }
+    else
+	printf("Error on opening.\n");
+	
+    file *f = (file*) getElement(file, 0);
+    if(closeFile(f->fd) > 0)
+	printf("File Closed.\n");
+    else
+	printf("Error on closing.\n");
     
     // All done, close sockets
     //close(newsockfd);
@@ -101,7 +113,7 @@ int main( int argc, char *argv[] )
     return 0; 
 }
 
-void openFile(char f[])
+/*void openFile(char f[])
 {
    if(Files == NULL)
    {
@@ -142,7 +154,7 @@ void openFile(char f[])
 void closeFile(FILE * f)
 {
 	fclose(f);
-}
+}*/
 
 /*void readFile(FILE *f, int offset)
 {

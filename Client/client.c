@@ -149,7 +149,7 @@ int main(int argc, char **argv) {
 	 * test library
 	 */
 	struct in_addr ip;
-	ip.s_addr = inet_addr("127.0.0.1");
+	ip.s_addr = inet_addr("192.168.100.80");
 	fileloc_t fl;
 	fl.ipaddress = ip;
 	fl.pathname = "ajla";
