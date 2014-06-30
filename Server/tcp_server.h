@@ -6,5 +6,6 @@
 int maxfd;
 
 int acceptConnection(int socket, fd_set *listening);
+rm_protocol * manager(rm_protocol *received);
 
 #endif // TCP_SERVER_H

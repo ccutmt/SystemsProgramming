@@ -124,17 +124,24 @@ openFile(file_name);*/
 }
 
 int acceptConnection(int socket, fd_set *listening){
-	struct sockaddr_in *cli_addr = malloc(sizeof(struct sockaddr_in));
+	struct sockaddr_in cli_addr;
 	int size = sizeof(struct sockaddr_in);
-	int fd = accept(socket, (struct sockaddr*)cli_addr, (socklen_t*)&size);
+	int fd = accept(socket, (struct sockaddr*)&cli_addr, (socklen_t*)&size);
 	if(fd == -1){
 		perror("Accept failed");
 		return -1;
 	}
 	else{
+		addConnection(fd, cli_addr.sin_addr.s_addr);
 		FD_SET(fd, listening);
 		if(fd > maxfd)
 			maxfd = fd;
 		return fd;
+	}
+}
+
+rm_protocol * manager(rm_protocol *received){
+	switch(received->type){
+
 	}
 }
