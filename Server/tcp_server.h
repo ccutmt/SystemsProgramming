@@ -7,4 +7,6 @@ typedef struct connections
     unsigned long ip;	
 }connections;
 
+int acceptConnection(int socket, fd_set *listening);
+
 #endif // TCP_SERVER_H
