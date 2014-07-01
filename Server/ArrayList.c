@@ -52,7 +52,7 @@ void freeAll(ArrayList *list)
 {
 	int i = 0;
  	for(i = 0; i <= list->current; i++)
-        	free(list->elements);
+        	free(getElement(list,i));
 }
 
 void * getElement (ArrayList *const list, int index)
