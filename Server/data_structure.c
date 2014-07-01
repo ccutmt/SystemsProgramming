@@ -99,7 +99,7 @@ void mapRequest(char * path, off_t offset, connection *conn, char *buff, unsigne
 	filepart *fp;
 	user_info *ui;
 	if(file == NULL){
-		int fd = openFile(path);
+		int fd = openFile(path, err);
 		if(fd == -1)
 			return;
 
@@ -120,7 +120,7 @@ void mapRequest(char * path, off_t offset, connection *conn, char *buff, unsigne
 
 	fp = getFilePart(offset, file);
 	if(fp == NULL){
-		if(readFile(buff, _DATA_LENGTH, file->fd, offset) == 0){
+		if(readFile(buff, _DATA_LENGTH, file->fd, offset, err) == 0){
 			fp = malloc(sizeof(filepart));
 			fp->start_offset = offset;
 			fp->entries = malloc(sizeof(ArrayList));
@@ -188,7 +188,7 @@ void readRequest(unsigned long id, off_t offset, size_t length, char * buff, con
 
 	fp = getFilePart(offset, file);
 	if(fp == NULL){
-		if(readFile(buff, _DATA_LENGTH, file->fd, offset)){
+		if(readFile(buff, _DATA_LENGTH, file->fd, offset, err)){
 			fp = malloc(sizeof(filepart));
 			fp->start_offset = offset;
 			fp->entries = malloc(sizeof(ArrayList));
@@ -226,9 +226,9 @@ void writeRequest(unsigned long id, off_t offset, size_t length, char * buff, co
 	else{
 		user_info *ui = getElement(fp->entries, con_off);
 		if(ui->isvalid == 0){
-			writeFile(buff, length, file->fd, offset);
+			writeFile(buff, length, file->fd, offset, err);
 			setLastWriter(conn->fd, fp);
 		}
-		else return;
+		else err = -1;			
 	}
 }
