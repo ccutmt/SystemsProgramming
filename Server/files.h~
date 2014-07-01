@@ -7,6 +7,7 @@
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "../ArrayList/ArrayList.h"
 
 int openFile(char* pathname);
 int closeFile(int fd);
