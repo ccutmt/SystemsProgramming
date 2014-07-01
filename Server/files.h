@@ -7,11 +7,11 @@
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "ArrayList.h"
+#include <errno.h>
 
-int openFile(char* pathname);
-int closeFile(int fd);
-int readFile(char* buff, size_t length, int fd, off_t offset);
-int writeFile(char *buff, size_t length, int fd, off_t offset);
+int openFile(char* pathname, int *err);
+int closeFile(int fd, int *err);
+int readFile(char* buff, size_t length, int fd, off_t offset, int *err);
+int writeFile(char *buff, size_t length, int fd, off_t offset, int *err);
 
 #endif 

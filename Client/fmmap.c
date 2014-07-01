@@ -217,7 +217,7 @@ ssize_t mwrite(void *addr, off_t offset, void *buff, size_t count){
 						temp_offset += tocopy - curr_off;
 
 						rm_protocol tosend, reply;
-						makeWriteRequest(&tosend, mapping->fileid, getpid(), read.data, start_offset, _DATA_LENGTH);
+						makeWriteRequest(&tosend, mapping->fileid, getpid(), read.data, start_offset, tocopy);
 						makeRequest(&tosend, &reply, mapping->ip, mapping->port);
 
 						if(reply.type == ERROR){

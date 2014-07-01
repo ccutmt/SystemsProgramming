@@ -6,7 +6,7 @@ unsigned long fileid;
 void initDataStructure(){
 	files = malloc(sizeof(ArrayList));
 	initArrayList(files);
-	fileid = 0;
+	fileid = 1;
 }
 
 filepart * getFilePart(off_t start_offset, rmfile * file){
@@ -94,7 +94,7 @@ int getRmfileOffset(rmfile *rem){
 	return -1;
 }
 
-void mapRequest(char * path, off_t offset, connection *conn, char *buff){
+void mapRequest(char * path, off_t offset, connection *conn, char *buff, unsigned long *fid, int *err){
 	rmfile * file = getFile(path);
 	filepart *fp;
 	user_info *ui;
@@ -104,14 +104,18 @@ void mapRequest(char * path, off_t offset, connection *conn, char *buff){
 			return;
 
 		//Create file entry
-		file = malloc(sizeof(filepart));
+		file = malloc(sizeof(rmfile));
 		file->fd = fd;
 		file->pathname = malloc(sizeof(char) * strlen(path));
 		memcpy(file->pathname, path, strlen(path));
 		file->fileparts = malloc(sizeof(ArrayList));
 		file->fileid = fileid +1;
+		*fid = fileid+1;
 		fileid++;
 		initArrayList(file->fileparts);
+		add(files, file);
+	}else{
+		*fid = file->fileid;
 	}
 
 	fp = getFilePart(offset, file);
@@ -131,7 +135,7 @@ void mapRequest(char * path, off_t offset, connection *conn, char *buff){
 	add(fp->entries, ui);
 }
 
-void unmapRequest(unsigned long id, off_t offset, connection *conn){
+void unmapRequest(unsigned long id, off_t offset, connection *conn, int *err){
 	rmfile * file = getFileById(id);
 	filepart *fp;
 
@@ -173,7 +177,7 @@ void unmapRequest(unsigned long id, off_t offset, connection *conn){
 	}
 }
 
-void readRequest(unsigned long id, off_t offset, size_t length, char * buff, connection *conn){
+void readRequest(unsigned long id, off_t offset, size_t length, char * buff, connection *conn, int *err){
 	rmfile * file = getFileById(id);
 	filepart *fp;
 	user_info *ui;
@@ -206,17 +210,15 @@ void readRequest(unsigned long id, off_t offset, size_t length, char * buff, con
 	}
 }
 
-void writeRequest(unsigned long id, off_t offset, size_t length, char * buff, connection *conn){
+void writeRequest(unsigned long id, off_t offset, size_t length, char * buff, connection *conn, int *err){
 	rmfile * file = getFileById(id);
 	filepart *fp;
 
 	if(file == NULL)
 		return;
-
 	fp = getFilePart(offset, file);
 	if(fp == NULL)
 		return;
-
 	int con_off = getUserInfoOffset(conn, fp);
 	if(con_off == -1){
 		return;
@@ -225,6 +227,7 @@ void writeRequest(unsigned long id, off_t offset, size_t length, char * buff, co
 		user_info *ui = getElement(fp->entries, con_off);
 		if(ui->isvalid == 0){
 			writeFile(buff, length, file->fd, offset);
+			setLastWriter(conn->fd, fp);
 		}
 		else return;
 	}

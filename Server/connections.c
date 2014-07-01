@@ -1,7 +1,5 @@
 #include "connections.h"
 
-ArrayList *connections;
-
 void initConnections(){
 	connections = malloc(sizeof(ArrayList));
 	initArrayList(connections);

@@ -162,9 +162,10 @@ int main(int argc, char **argv) {
 	printf("reading");
 	printf("Read: %i", mread(point, 0, buff, 20));
 	getchar();
-	buff[0] = 'Q';
-	printf("written: %i", mwrite(point, 0, buff, 20));
+	*(buff) = 'Z';
 	printf("Data is: %s", buff);
+	printf("written: %i", mwrite(point, 0, buff, strlen(buff)));
+
 	printf("before unmap");
 	getchar();
 	rmunmap(point);

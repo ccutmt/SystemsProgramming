@@ -48,37 +48,34 @@ int main( int argc, char *argv[] )
 	// Accept actual connection from the client
 	int i = 0;
 	for(;;){
-		fflush(stdout);
+		FD_ZERO(&readset);
+		FD_SET(sockfd, &readset);
+		populateSet(&readset);
+		//also add the rest of the open connections
+
 		int result = select(maxfd + 1, &readset, NULL, NULL, NULL);
 		if(result > 0){
 			for(i = 2; i < maxfd+1; i++){
 				if(FD_ISSET(i, &readset)){
 					if(i == sockfd){
-						newsockfd = acceptConnection(sockfd, &readset);//(sockfd, (struct sockaddr *)&cli_addr, (socklen_t*) &clilen);
+						newsockfd = acceptConnection(sockfd, &readset);
 						if (newsockfd < 0)
 						{
 							exit(1);
 						}
 					}else{
-						//printf("result: %i", result);
 						rm_protocol *message = malloc(sizeof(rm_protocol));
 						rm_protocol *reply = malloc(sizeof(rm_protocol));
 						if(readFromNet(i, message) != -1){
-							/*printf(
-									"pid: %i\nFilepart: %u\nType: %i\nErrorId: %i\nPath: %s\ncount: %i\nData: %s\n",
-									message.pid, message.filepart, message.type, message.error_id,
-									message.path, message.count, message.data);
-							fflush(stdout);*/
-
 							manager(message, reply, i);
-							printf("Reply: %s", reply->data);
+							reply->pid = message->pid;
 							sendStruct(i, reply);
 						}else{
-							printf("closing %i\nmaxfd: %i", i, maxfd);
 							fflush(stdout);
-
-							FD_CLR(i, &readset);
-							FD_SET(sockfd, &readset);
+							connection * c = getConnectionByFd(i);
+							int off = getConnectionOffset(c);
+							removeAt(connections, off);
+							free(c);
 							close(i);
 						}
 					}
@@ -111,20 +108,29 @@ void manager(rm_protocol *received, rm_protocol * reply, int fd){
 	connection *conn = getConnectionByFd(fd);
 	switch(received->type){
 	case MAP:{
-		mapRequest(received->path, received->offset, conn, reply->data);
+		mapRequest(received->path, received->offset, conn, reply->data, (unsigned long*)&reply->filepart);
 		break;
 	}
 	case READ:{
-		readRequest(received->filepart, received->offset, _DATA_LENGTH, reply->data, conn);
+		readRequest(received->filepart, received->offset, received->count, reply->data, conn);
 		break;
 	}
 	case WRITE:{
-		writeRequest(received->filepart, received->offset, _DATA_LENGTH, received->data, conn);
+		writeRequest(received->filepart, received->offset, received->count, received->data, conn);
 		break;
 	}
 	case UNMAP:{
 		unmapRequest(received->filepart, received->offset, conn);
 		break;
 	}
+	}
+}
+
+void populateSet(fd_set *listening){
+	int c = 0;
+	while(c <= connections->current){
+		connection *con = getElement(connections, c);
+		FD_SET(con->fd, listening);
+		c++;
 	}
 }

@@ -26,11 +26,10 @@ struct rm_protocol{
 	uint32_t filepart;
 	int type;
 	int error_id;
-	//int path_length;
 	char path[256];
 	int offset;
 	int count;
-	//int data_length;
+	int actual_read;
 	char data[256];
 };
 typedef struct rm_protocol rm_protocol;

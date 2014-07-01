@@ -6,7 +6,6 @@ ArrayList *servers_mapped = NULL;
 uint32_t getInt(int socket_fd) {
 	uint32_t x;
 	if (read(socket_fd, &x, sizeof(x)) <= 0) {
-		perror("Error reading from socket");
 		return -1;
 	}
 	x = ntohl(x);

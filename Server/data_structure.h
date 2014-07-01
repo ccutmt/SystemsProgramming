@@ -34,9 +34,9 @@ void setLastWriter(int user_fd, filepart *part);
 int getUserInfoOffset(connection *rem, filepart *fp);
 int getFilePartOffset(filepart * rem, rmfile *file);
 int getRmfileOffset(rmfile *rem);
-void unmapRequest(unsigned long id, off_t offset, connection *conn);
-void mapRequest(char *path, off_t offset, connection *conn, char *buff);
-void readRequest(unsigned long id, off_t offset, size_t length, char * buff, connection *conn);
-void writeRequest(unsigned long id, off_t offset, size_t length, char * buff, connection *conn);
+void unmapRequest(unsigned long id, off_t offset, connection *conn, int *err);
+void mapRequest(char *path, off_t offset, connection *conn, char *buff, unsigned long *fid, int *err);
+void readRequest(unsigned long id, off_t offset, size_t length, char * buff, connection *conn, int *err);
+void writeRequest(unsigned long id, off_t offset, size_t length, char * buff, connection *conn, int *err);
 
 #endif /* DATA_STRUCTURE_H_ */
