@@ -156,21 +156,21 @@ int main(int argc, char **argv) {
 	fl.port = 8080;
 	printf("pid: %i", getpid());
 	void *point = rmmap(fl, 0);
+	perror("map");
 	//printf("%i", *(int*)point);
 	getchar();
 	char *buff = malloc(sizeof(char) * 5);
-	/*printf("reading");
+	printf("reading");
 	printf("Read: %i", mread(point, 0, buff, 5));
+	perror("read");
 	getchar();
 	*(buff) = 'Z';
 	printf("Data is: %s", buff);
 	printf("written: %i", mwrite(point, 0, buff, 5));
-
-	printf("before unmap");
+	perror("write");
 	getchar();
-	rmunmap(point);*/
-	printf("Error: %i", errno);
-	perror("here");
+	rmunmap(point);
+	perror("Unamp");
 	getchar();
 	return 0;
 }

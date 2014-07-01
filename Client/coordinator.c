@@ -1,5 +1,9 @@
 #include "coordinator.h"
+
+#define MAXPARTS 4096
+
 int initco = -1;
+
 int initCoordinator(){
 	//Create message queue and register signal
 	if(signal(SIGUSR1, newMsgInQueue) == SIG_ERR)
@@ -18,7 +22,7 @@ int initCoordinator(){
 	//Attach shared memory segments
 	if((_header_mem_id = getShmId(_HEADER_KEY, sizeof(int))) == -1)
 		return -1;
-	if((_data_mem_id = getShmId(_DATA_KEY, sizeof(_shared_file) * 10)) == -1)
+	if((_data_mem_id = getShmId(_DATA_KEY, sizeof(_shared_file) * MAXPARTS)) == -1)
 		return -1;
 	if((_header_memory = attachKey(_header_mem_id)) == (void*) -1)
 		return -1;
@@ -62,6 +66,8 @@ void getUpdatedDataFromServer(int fileid, unsigned long offset, _shared_file *re
 }
 
 int getMappingByAddr(void *addr){
+	if(addressmap == NULL)
+		return -1;
 	int c = 0;
 	while(c <= addressmap->current){
 		if(addr == getElement(addressmap, c)){
@@ -152,7 +158,7 @@ int sendMsg(rqst_over_queue* msgp){
 int getFilePartOffset(unsigned long fileid, unsigned long serverip, unsigned long offset){
 	void * idloc = _data_memory;
 	int count = 0;
-	while(count < 10){
+	while(count < MAXPARTS){
 		if(*(unsigned long*)(idloc + sizeof(unsigned int) * 2) == fileid){
 			if(*(unsigned long*)(idloc + (sizeof(unsigned int) * 2) + sizeof(unsigned long)) == serverip){
 				if(*(unsigned long*)(idloc + (sizeof(unsigned int) * 2) + sizeof(unsigned long)*2) == offset){
@@ -169,7 +175,7 @@ int getFilePartOffset(unsigned long fileid, unsigned long serverip, unsigned lon
 int getFirstFreePart(){
 	int count = 0;
 	void * idloc = _data_memory;
-	while(count < 10){
+	while(count < MAXPARTS){
 		if(*(unsigned int*)idloc == 0){
 			return count;
 		}
@@ -186,18 +192,20 @@ void destroyCoordinator(){
 		while((receiveMsgQueue(_queue_id, &temp)) != -1){
 		}
 
-		//Unmap all mapped parts
-		int i, j;
-		for(i = 0; i <= addressmap->current; i++){
-			map_info* target = getElement(addressmap, i);
-			for(j = 0; j <= target->offsets->current; j++){
-				map_part_info *part = (map_part_info*)(getElement(target->offsets, j));
-				makeUnmap(part->part_offset, target->ip, target->port);
-				//free(getElement(target->offsets, j));
+		if(addressmap != NULL){
+			//Unmap all mapped parts
+			int i, j;
+			for(i = 0; i <= addressmap->current; i++){
+				map_info* target = getElement(addressmap, i);
+				for(j = 0; j <= target->offsets->current; j++){
+					map_part_info *part = (map_part_info*)(getElement(target->offsets, j));
+					makeUnmap(part->part_offset, target->ip, target->port);
+					//free(getElement(target->offsets, j));
+				}
+				freeAll(target->offsets);
 			}
-			freeAll(target->offsets);
+			freeAll(addressmap);
 		}
-		freeAll(addressmap);
 		//If this is the last process alive, destroy IPC structures
 		requestWrite(sem_header_set);
 		int pno = getSharedInt(_header_memory + sizeof(int));
