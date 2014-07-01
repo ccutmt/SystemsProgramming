@@ -261,10 +261,6 @@ int makeMap(rm_protocol *reply, struct in_addr ip, unsigned long off){
 	return firstfree;
 }
 
-/*
- * return of 0 means unmap failed
- * return of 1 means successful
- */
 int makeUnmap(int offset, struct in_addr ip, int port){
 	_shared_file *tounmap = malloc(sizeof(_shared_file));
 	readSharedData(offset, tounmap);
@@ -280,9 +276,11 @@ int makeUnmap(int offset, struct in_addr ip, int port){
 		//clear memory part
 		bzero(_data_memory + (sizeof(_shared_file)*offset), sizeof(_shared_file));
 
-		if(reply.type == ERROR)
-			return 0;
-		else return 1;
+		if(reply.type == ERROR){
+			errno = reply.error_id;
+			return -1;
+		}
+		else return 0;
 	}
 }
 
@@ -292,7 +290,8 @@ int makeRead(int fileid, unsigned long realoff, struct in_addr ip, int port){
 		rm_protocol tosend, reply;
 		makeReadRequest(&tosend, getpid(), fileid, realoff, _DATA_LENGTH);
 		makeRequest(&tosend, &reply, ip, port);
-		memloc = makeMap(&reply, ip, realoff);
+		if(reply.error_id == 0)
+			memloc = makeMap(&reply, ip, realoff);
 	}
 	else incrementUsers(memloc);
 	return memloc;

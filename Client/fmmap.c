@@ -30,6 +30,7 @@ void * rmmap(fileloc_t location, off_t offset) {
 	unblockAllSignals();
 
 	if(reply->type == ERROR){
+		errno = reply->error_id;
 		free(reply);
 		return (void*) -1;
 	}
@@ -81,14 +82,15 @@ void * rmmap(fileloc_t location, off_t offset) {
 }
 
 ssize_t mread(void *addr, off_t offset, void *buff, size_t count){
+	unsigned long read_c = 0;
 	if(init == -1){
-		return -1;
+		return read_c;
 	}
 
 	int off = getMappingByAddr(addr);
 
 	if(off == -1){
-		return -1;
+		return read_c;
 	}
 	else{
 		int requests = (count + _DATA_LENGTH - 1) / _DATA_LENGTH;
@@ -109,7 +111,7 @@ ssize_t mread(void *addr, off_t offset, void *buff, size_t count){
 			if(newmap == -1){
 				releaseWrite(sem_data_set);
 				unblockAllSignals();
-				return -1;
+				return read_c;
 			}
 			else{
 				//Search for entry
@@ -144,23 +146,25 @@ ssize_t mread(void *addr, off_t offset, void *buff, size_t count){
 			memcpy(buff + (count - remaining), &copy.data[curr_off], tocopy);
 			remaining -= tocopy;
 			temp_offset += tocopy - curr_off;
+			read_c += tocopy;
 		}
 
 		releaseWrite(sem_data_set);
 		unblockAllSignals();
 	}
-	return count;
+	return read_c;
 }
 
 ssize_t mwrite(void *addr, off_t offset, void *buff, size_t count){
+	unsigned long count_c = 0;
 	if(init == -1){
-		return -1;
+		return count_c;
 	}
 
 	int off = getMappingByAddr(addr);
 
 	if(off == -1)
-		return -1;
+		return count_c;
 	else{
 		int requests = (count + _DATA_LENGTH - 1) / _DATA_LENGTH;
 		int i;
@@ -180,7 +184,7 @@ ssize_t mwrite(void *addr, off_t offset, void *buff, size_t count){
 
 			if(writeto == -1){
 				releaseWrite(sem_data_set);
-				return count - remaining;
+				return count_c;
 			}
 			else{
 				int off = checkIfRead(mapping, writeto);
@@ -188,7 +192,7 @@ ssize_t mwrite(void *addr, off_t offset, void *buff, size_t count){
 				//If no entries found, create one. Otherwise, update timestamp
 				if(off == -1){
 					releaseWrite(sem_data_set);
-					return count - remaining;
+					return count_c;
 				}else{
 					map_part_info *toupdate = getElement(mapping->offsets, off);
 					_shared_file read;
@@ -196,7 +200,7 @@ ssize_t mwrite(void *addr, off_t offset, void *buff, size_t count){
 
 					if(read.write_timestamp > toupdate->timestamp){
 						releaseWrite(sem_data_set);
-						return count - remaining;
+						return count_c;
 					}else{
 						toupdate->timestamp = time(NULL);
 						read.write_timestamp = toupdate->timestamp;
@@ -220,8 +224,12 @@ ssize_t mwrite(void *addr, off_t offset, void *buff, size_t count){
 						makeWriteRequest(&tosend, mapping->fileid, getpid(), read.data, start_offset, tocopy);
 						makeRequest(&tosend, &reply, mapping->ip, mapping->port);
 
-						if(reply.type == ERROR){
+						if(reply.type == ERROR && reply.error_id == -1){
 							getUpdatedDataFromServer(mapping->fileid, start_offset, &read, mapping->ip, mapping->port, writeto);
+						}else if(reply.type == ERROR){
+							errno = reply.error_id;
+						}else{
+							count_c += tocopy;
 						}
 					}
 				}
@@ -231,7 +239,7 @@ ssize_t mwrite(void *addr, off_t offset, void *buff, size_t count){
 		releaseWrite(sem_data_set);
 		unblockAllSignals();
 	}
-	return count;
+	return count_c;
 }
 
 int rmunmap(void *addr){
@@ -245,13 +253,13 @@ int rmunmap(void *addr){
 		return -1;
 	else{
 		int i = 0;
-		int removed = 0;
 		map_info* target = getElement(addressmap, offset);
 		setSignalMaskUsr1Only();
 		requestWrite(sem_data_set);
 		for(i = 0; i <= target->offsets->current; i++){
 			map_part_info *part = (map_part_info*)(getElement(target->offsets, i));
-			removed += makeUnmap(part->part_offset, target->ip, target->port);
+			if(makeUnmap(part->part_offset, target->ip, target->port) == -1)
+				return -1;
 		}
 		releaseWrite(sem_data_set);
 		unblockAllSignals();
