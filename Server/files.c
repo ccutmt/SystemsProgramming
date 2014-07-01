@@ -1,5 +1,4 @@
 #include "files.h"
-#include "ArrayList.h"
 
 int openFile(char* pathname){
 	int fin = open(pathname, O_RDWR);
