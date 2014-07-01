@@ -1,5 +1,5 @@
 #include "coordinator.h"
-
+int initco = -1;
 int initCoordinator(){
 	//Create message queue and register signal
 	if(signal(SIGUSR1, newMsgInQueue) == SIG_ERR)
@@ -47,6 +47,7 @@ int initCoordinator(){
 	sigfillset(&sigusr1only);
 	sigdelset(&sigusr1only, SIGUSR1);
 
+	initco = 0;
 	atexit(destroyCoordinator);
 
 	return 0;
@@ -180,40 +181,41 @@ int getFirstFreePart(){
 
 void destroyCoordinator(){
 	//Consume any messages remaining on queue
-	rqst_over_queue temp;
-	while((receiveMsgQueue(_queue_id, &temp)) != -1){
-	}
-
-	//Unmap all mapped parts
-	int i, j;
-	for(i = 0; i <= addressmap->current; i++){
-		map_info* target = getElement(addressmap, i);
-		for(j = 0; j <= target->offsets->current; j++){
-			map_part_info *part = (map_part_info*)(getElement(target->offsets, j));
-			makeUnmap(part->part_offset, target->ip, target->port);
-			//free(getElement(target->offsets, j));
+	if(initco == 0){
+		rqst_over_queue temp;
+		while((receiveMsgQueue(_queue_id, &temp)) != -1){
 		}
-		freeAll(target->offsets);
-	}
-	freeAll(addressmap);
 
-	//If this is the last process alive, destroy IPC structures
-	requestWrite(sem_header_set);
-	int pno = getSharedInt(_header_memory + sizeof(int));
-	setSharedInt(_header_memory + sizeof(int), pno - 1);
-	if(is_master == 0)
-		setSharedInt(_header_memory, 0);
+		//Unmap all mapped parts
+		int i, j;
+		for(i = 0; i <= addressmap->current; i++){
+			map_info* target = getElement(addressmap, i);
+			for(j = 0; j <= target->offsets->current; j++){
+				map_part_info *part = (map_part_info*)(getElement(target->offsets, j));
+				makeUnmap(part->part_offset, target->ip, target->port);
+				//free(getElement(target->offsets, j));
+			}
+			freeAll(target->offsets);
+		}
+		freeAll(addressmap);
+		//If this is the last process alive, destroy IPC structures
+		requestWrite(sem_header_set);
+		int pno = getSharedInt(_header_memory + sizeof(int));
+		setSharedInt(_header_memory + sizeof(int), pno - 1);
+		if(is_master == 0)
+			setSharedInt(_header_memory, 0);
 
-	detachKey(_header_memory);
-	detachKey(_data_memory);
-	if(pno == 1){
-		removeQueue(_queue_id);
-		removeMemSeg(_header_mem_id);
-		removeMemSeg(_data_mem_id);
-		removeSemaphores();
-	}
-	else{
-		releaseWrite(sem_header_set);
+		detachKey(_header_memory);
+		detachKey(_data_memory);
+		if(pno == 1){
+			removeQueue(_queue_id);
+			removeMemSeg(_header_mem_id);
+			removeMemSeg(_data_mem_id);
+			removeSemaphores();
+		}
+		else{
+			releaseWrite(sem_header_set);
+		}
 	}
 }
 

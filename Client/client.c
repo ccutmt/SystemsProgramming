@@ -152,24 +152,25 @@ int main(int argc, char **argv) {
 	ip.s_addr = inet_addr("127.0.0.1");
 	fileloc_t fl;
 	fl.ipaddress = ip;
-	fl.pathname = "/home/matthew/Desktop/Sys/Server/FILE_2.txt";
+	fl.pathname = "/home/matthew/Desktop/Sys/Server/FILE_3.txt";
 	fl.port = 8080;
 	printf("pid: %i", getpid());
 	void *point = rmmap(fl, 0);
 	//printf("%i", *(int*)point);
 	getchar();
-	char *buff = malloc(sizeof(char) * 20);
-	printf("reading");
-	printf("Read: %i", mread(point, 0, buff, 20));
+	char *buff = malloc(sizeof(char) * 5);
+	/*printf("reading");
+	printf("Read: %i", mread(point, 0, buff, 5));
 	getchar();
 	*(buff) = 'Z';
 	printf("Data is: %s", buff);
-	printf("written: %i", mwrite(point, 0, buff, strlen(buff)));
+	printf("written: %i", mwrite(point, 0, buff, 5));
 
 	printf("before unmap");
 	getchar();
-	rmunmap(point);
+	rmunmap(point);*/
+	printf("Error: %i", errno);
+	perror("here");
 	getchar();
-
 	return 0;
 }

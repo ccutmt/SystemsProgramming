@@ -4,6 +4,7 @@
 #include "connections.h"
 #include "files.h"
 #include "ArrayList.h"
+#include "net_protocol.h"
 #include <string.h>
 
 #define _DATA_LENGTH 256
@@ -36,7 +37,7 @@ int getFilePartOffset(filepart * rem, rmfile *file);
 int getRmfileOffset(rmfile *rem);
 void unmapRequest(unsigned long id, off_t offset, connection *conn, int *err);
 void mapRequest(char *path, off_t offset, connection *conn, char *buff, unsigned long *fid, int *err);
-void readRequest(unsigned long id, off_t offset, size_t length, char * buff, connection *conn, int *err);
-void writeRequest(unsigned long id, off_t offset, size_t length, char * buff, connection *conn, int *err);
+void readRequest(unsigned long id, off_t offset, size_t length, rm_protocol *reply, connection *conn);
+void writeRequest(unsigned long id, off_t offset, size_t length, char *buff, rm_protocol *reply, connection *conn);
 
 #endif /* DATA_STRUCTURE_H_ */

@@ -120,7 +120,7 @@ void mapRequest(char * path, off_t offset, connection *conn, char *buff, unsigne
 
 	fp = getFilePart(offset, file);
 	if(fp == NULL){
-		if(readFile(buff, _DATA_LENGTH, file->fd, offset, err) == 0){
+		if(readFile(buff, _DATA_LENGTH, file->fd, offset, err) >= 0){
 			fp = malloc(sizeof(filepart));
 			fp->start_offset = offset;
 			fp->entries = malloc(sizeof(ArrayList));
@@ -170,6 +170,7 @@ void unmapRequest(unsigned long id, off_t offset, connection *conn, int *err){
 		if(fileoff != -1){
 			rmfile *rem = getElement(files, fileoff);
 			removeAt(files, fileoff);
+			closeFile(rem->fd, err);
 			free(rem->pathname);
 			free(rem->fileparts);
 			free(rem);
@@ -177,7 +178,7 @@ void unmapRequest(unsigned long id, off_t offset, connection *conn, int *err){
 	}
 }
 
-void readRequest(unsigned long id, off_t offset, size_t length, char * buff, connection *conn, int *err){
+void readRequest(unsigned long id, off_t offset, size_t length, rm_protocol *reply, connection *conn){
 	rmfile * file = getFileById(id);
 	filepart *fp;
 	user_info *ui;
@@ -188,13 +189,16 @@ void readRequest(unsigned long id, off_t offset, size_t length, char * buff, con
 
 	fp = getFilePart(offset, file);
 	if(fp == NULL){
-		if(readFile(buff, _DATA_LENGTH, file->fd, offset, err)){
+		ssize_t readsize = 0;
+		if((readsize = readFile(reply->data, _DATA_LENGTH, file->fd, offset, &(reply->error_id))) >= 0){
 			fp = malloc(sizeof(filepart));
 			fp->start_offset = offset;
 			fp->entries = malloc(sizeof(ArrayList));
 			initArrayList(fp->entries);
 			add(file->fileparts, fp);
 		}
+
+		reply->actual_read = readsize;
 	}
 
 	int con_off = getUserInfoOffset(conn, fp);
@@ -210,7 +214,7 @@ void readRequest(unsigned long id, off_t offset, size_t length, char * buff, con
 	}
 }
 
-void writeRequest(unsigned long id, off_t offset, size_t length, char * buff, connection *conn, int *err){
+void writeRequest(unsigned long id, off_t offset, size_t length, char *buff, rm_protocol *reply, connection *conn){
 	rmfile * file = getFileById(id);
 	filepart *fp;
 
@@ -226,9 +230,10 @@ void writeRequest(unsigned long id, off_t offset, size_t length, char * buff, co
 	else{
 		user_info *ui = getElement(fp->entries, con_off);
 		if(ui->isvalid == 0){
-			writeFile(buff, length, file->fd, offset, err);
+			ssize_t written = writeFile(buff, length, file->fd, offset, &(reply->error_id));
+			reply->actual_read = written;
 			setLastWriter(conn->fd, fp);
 		}
-		else err = -1;			
+		else reply->error_id = -1;
 	}
 }

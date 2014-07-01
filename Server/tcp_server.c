@@ -108,19 +108,31 @@ void manager(rm_protocol *received, rm_protocol * reply, int fd){
 	connection *conn = getConnectionByFd(fd);
 	switch(received->type){
 	case MAP:{
-		mapRequest(received->path, received->offset, conn, reply->data, (unsigned long*)&reply->filepart);
+		mapRequest(received->path, received->offset, conn, reply->data, (unsigned long*)&reply->filepart, &(reply->error_id));
+		if(reply->error_id){
+			reply->type = ERROR;
+		}
 		break;
 	}
 	case READ:{
-		readRequest(received->filepart, received->offset, received->count, reply->data, conn);
+		readRequest(received->filepart, received->offset, received->count, reply, conn);
+		if(reply->error_id){
+			reply->type = ERROR;
+		}
 		break;
 	}
 	case WRITE:{
-		writeRequest(received->filepart, received->offset, received->count, received->data, conn);
+		writeRequest(received->filepart, received->offset, received->count, received->data, reply, conn);
+		if(reply->error_id){
+			reply->type = ERROR;
+		}
 		break;
 	}
 	case UNMAP:{
-		unmapRequest(received->filepart, received->offset, conn);
+		unmapRequest(received->filepart, received->offset, conn, &(reply->error_id));
+		if(reply->error_id){
+			reply->type = ERROR;
+		}
 		break;
 	}
 	}
