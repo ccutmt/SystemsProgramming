@@ -35,8 +35,10 @@ int sendData(int socket_fd, char *data){
 }
 
 
-void readFromNet(int socket_fd, rm_protocol* mystruct) {
-	mystruct->pid = getInt(socket_fd);
+int readFromNet(int socket_fd, rm_protocol* mystruct) {
+	int res = mystruct->pid = getInt(socket_fd);
+	if(res == -1)
+		return -1;
 	mystruct->filepart = getInt(socket_fd);
 	mystruct->type = getInt(socket_fd);
 	mystruct->error_id = getInt(socket_fd);
@@ -44,6 +46,7 @@ void readFromNet(int socket_fd, rm_protocol* mystruct) {
 	mystruct->offset = getInt(socket_fd);
 	mystruct->count = getInt(socket_fd);
 	getData(socket_fd, mystruct->data);
+	return 0;
 }
 
 void sendStruct(int socket_fd, rm_protocol *data) {

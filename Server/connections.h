@@ -10,8 +10,7 @@ typedef struct connection
     unsigned long ip;
 }connection;
 
-ArrayList *connections;
-
+void initConnections();
 void addConnection(int fd, unsigned long ip);
 connection * getConnectionByIp(unsigned long ip);
 int getConnectionOffset(connection * c);

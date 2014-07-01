@@ -45,7 +45,7 @@ uint32_t getInt(int socket_fd);
 int getData(int socket_fd, char *buffer);
 int sendInt(int socket_fd, uint32_t tosend);
 int sendData(int socket_fd, char *data);
-void readFromNet(int socket_fd, rm_protocol* );
+int readFromNet(int socket_fd, rm_protocol* );
 void sendStruct(int socket_fd, rm_protocol *data);
 
 void makeMapRequest(rm_protocol *tosend, int pid, char *path, int offset);

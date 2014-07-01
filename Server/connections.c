@@ -1,8 +1,15 @@
 #include "connections.h"
 
+ArrayList *connections;
+
+void initConnections(){
+	connections = malloc(sizeof(ArrayList));
+	initArrayList(connections);
+}
+
 void addConnection(int fd, unsigned long ip){
 	connection *search = getConnectionByIp(ip);
-	if(search != NULL){
+	if(search == NULL){
 		search = malloc(sizeof(connection));
 		search->fd = fd;
 		search->ip = ip;

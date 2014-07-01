@@ -7,8 +7,8 @@ int main( int argc, char *argv[] )
 	// Declare variables
 	//ArrayList * ClientList = NULL;
 	fd_set readset;
-	int sockfd, newsockfd, portno, clilen;
-	struct sockaddr_in serv_addr, cli_addr;
+	int sockfd, newsockfd, portno;
+	struct sockaddr_in serv_addr;
 
 	// Create server socket (AF_INET, SOCK_STREAM)
 	sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -33,11 +33,13 @@ int main( int argc, char *argv[] )
 	// Start listening for the clients, here process will
 	// go in sleep mode and will wait for the incoming connection
 	listen(sockfd,10);
-	clilen = sizeof(cli_addr);
 
 	//initialize listening set
 	FD_ZERO(&readset);
 	FD_SET(sockfd, &readset);
+
+	initConnections();
+	initDataStructure();
 	//printf("Sockfd: %i", sockfd);
 
 	//printf("before loop");
@@ -48,12 +50,10 @@ int main( int argc, char *argv[] )
 	for(;;){
 		fflush(stdout);
 		int result = select(maxfd + 1, &readset, NULL, NULL, NULL);
-		fflush(stdout);
 		if(result > 0){
 			for(i = 2; i < maxfd+1; i++){
 				if(FD_ISSET(i, &readset)){
 					if(i == sockfd){
-						fflush(stdout);
 						newsockfd = acceptConnection(sockfd, &readset);//(sockfd, (struct sockaddr *)&cli_addr, (socklen_t*) &clilen);
 						if (newsockfd < 0)
 						{
@@ -62,13 +62,17 @@ int main( int argc, char *argv[] )
 					}else{
 						//printf("result: %i", result);
 						rm_protocol *message = malloc(sizeof(rm_protocol));
+						rm_protocol *reply = malloc(sizeof(rm_protocol));
 						if(readFromNet(i, message) != -1){
-							printf(
+							/*printf(
 									"pid: %i\nFilepart: %u\nType: %i\nErrorId: %i\nPath: %s\ncount: %i\nData: %s\n",
-									message->pid, message->filepart, message->type, message->error_id,
-									message->path, message->count, message->data);
-							fflush(stdout);
-							sendStruct(i, message);
+									message.pid, message.filepart, message.type, message.error_id,
+									message.path, message.count, message.data);
+							fflush(stdout);*/
+
+							manager(message, reply, i);
+							printf("Reply: %s", reply->data);
+							sendStruct(i, reply);
 						}else{
 							printf("closing %i\nmaxfd: %i", i, maxfd);
 							fflush(stdout);
@@ -82,43 +86,6 @@ int main( int argc, char *argv[] )
 			}
 		}
 	}
-
-	/*else
-{
-	printf("Client connected\n");
-	/*	unsigned long ip = cli_addr.sin_addr.s_addr;
-	printf("Client details\nIP: %lu \n", ip);
-	if(ClientList == NULL)
-	{
-		ClientList = malloc(sizeof(ArrayList));
-		initArrayList(ClientList);
-	}
-	connections * conn = malloc(sizeof(connections));
-	conn->ip = ip;
-	conn->id = 0;
-	add(ClientList, conn);
-	connections *e = (connections*) getElement(ClientList, 0);
-	printf("Client details\nIP: %lu \n ", e->ip);*/
-	//}
-
-	// If connection is established then start communicating
-	/*rm_protocol *message;
-message = readFromNet(newsockfd);
-printf("%i %i %i %s", message->type, message->offset, message->data_length ,message->data);*/
-	/*
-	 * Read from network
-	 */
-	/*rm_protocol *message;
-message = readFromNet(newsockfd);
-printf("%i %i", message->type, message->offset);*/
-
-	/* char file_name[10];
-printf("\nEnter name of file: ");
-scanf("%s", file_name);
-openFile(file_name);*/
-
-	// All done, close sockets
-	//close(newsockfd);
 	close(sockfd);
 	return 0;
 }
@@ -140,8 +107,24 @@ int acceptConnection(int socket, fd_set *listening){
 	}
 }
 
-rm_protocol * manager(rm_protocol *received){
+void manager(rm_protocol *received, rm_protocol * reply, int fd){
+	connection *conn = getConnectionByFd(fd);
 	switch(received->type){
-
+	case MAP:{
+		mapRequest(received->path, received->offset, conn, reply->data);
+		break;
+	}
+	case READ:{
+		readRequest(received->filepart, received->offset, _DATA_LENGTH, reply->data, conn);
+		break;
+	}
+	case WRITE:{
+		writeRequest(received->filepart, received->offset, _DATA_LENGTH, received->data, conn);
+		break;
+	}
+	case UNMAP:{
+		unmapRequest(received->filepart, received->offset, conn);
+		break;
+	}
 	}
 }

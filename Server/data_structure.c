@@ -4,6 +4,7 @@ ArrayList * files;
 unsigned long fileid;
 
 void initDataStructure(){
+	files = malloc(sizeof(ArrayList));
 	initArrayList(files);
 	fileid = 0;
 }
@@ -105,6 +106,7 @@ void mapRequest(char * path, off_t offset, connection *conn, char *buff){
 		//Create file entry
 		file = malloc(sizeof(filepart));
 		file->fd = fd;
+		file->pathname = malloc(sizeof(char) * strlen(path));
 		memcpy(file->pathname, path, strlen(path));
 		file->fileparts = malloc(sizeof(ArrayList));
 		file->fileid = fileid +1;
@@ -114,9 +116,10 @@ void mapRequest(char * path, off_t offset, connection *conn, char *buff){
 
 	fp = getFilePart(offset, file);
 	if(fp == NULL){
-		if(readFile(buff, _DATA_LENGTH, file->fd, offset)){
+		if(readFile(buff, _DATA_LENGTH, file->fd, offset) == 0){
 			fp = malloc(sizeof(filepart));
 			fp->start_offset = offset;
+			fp->entries = malloc(sizeof(ArrayList));
 			initArrayList(fp->entries);
 			add(file->fileparts, fp);
 		}
@@ -143,19 +146,30 @@ void unmapRequest(unsigned long id, off_t offset, connection *conn){
 	if(con_off == -1)
 		return;
 	else{
+		user_info *rem = getElement(fp->entries, con_off);
 		removeAt(fp->entries, con_off);
+		free(rem);
 	}
 
 	if(fp->entries->current == -1){
 		int fp_off = getFilePartOffset(fp, file);
-		if(fp_off != -1)
+		if(fp_off != -1){
+			filepart *rem = getElement(file->fileparts, fp_off);
 			removeAt(file->fileparts, fp_off);
+			free(rem->entries);
+			free(rem);
+		}
 	}
 
 	if(file->fileparts->current == -1){
 		int fileoff = getRmfileOffset(file);
-		if(fileoff != -1)
+		if(fileoff != -1){
+			rmfile *rem = getElement(files, fileoff);
 			removeAt(files, fileoff);
+			free(rem->pathname);
+			free(rem->fileparts);
+			free(rem);
+		}
 	}
 }
 
@@ -173,6 +187,7 @@ void readRequest(unsigned long id, off_t offset, size_t length, char * buff, con
 		if(readFile(buff, _DATA_LENGTH, file->fd, offset)){
 			fp = malloc(sizeof(filepart));
 			fp->start_offset = offset;
+			fp->entries = malloc(sizeof(ArrayList));
 			initArrayList(fp->entries);
 			add(file->fileparts, fp);
 		}

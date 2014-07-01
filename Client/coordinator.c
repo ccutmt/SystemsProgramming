@@ -191,11 +191,11 @@ void destroyCoordinator(){
 		for(j = 0; j <= target->offsets->current; j++){
 			map_part_info *part = (map_part_info*)(getElement(target->offsets, j));
 			makeUnmap(part->part_offset, target->ip, target->port);
-			free(target->offsets->elements);
+			//free(getElement(target->offsets, j));
 		}
-		free(target->offsets);
+		freeAll(target->offsets);
 	}
-	free(addressmap);
+	freeAll(addressmap);
 
 	//If this is the last process alive, destroy IPC structures
 	requestWrite(sem_header_set);

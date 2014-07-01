@@ -18,7 +18,7 @@ void * rmmap(fileloc_t location, off_t offset) {
 	if(init == -1){
 		if(initCoordinator() == -1){
 			return (void*) -1;
-		}
+		}else init = 1;
 	}
 
 	rm_protocol *tosend = malloc(sizeof(rm_protocol));
@@ -87,8 +87,9 @@ ssize_t mread(void *addr, off_t offset, void *buff, size_t count){
 
 	int off = getMappingByAddr(addr);
 
-	if(off == -1)
+	if(off == -1){
 		return -1;
+	}
 	else{
 		int requests = (count + _DATA_LENGTH - 1) / _DATA_LENGTH;
 		int i;

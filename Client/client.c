@@ -149,19 +149,22 @@ int main(int argc, char **argv) {
 	 * test library
 	 */
 	struct in_addr ip;
-	ip.s_addr = inet_addr("192.168.100.80");
+	ip.s_addr = inet_addr("127.0.0.1");
 	fileloc_t fl;
 	fl.ipaddress = ip;
-	fl.pathname = "ajla";
+	fl.pathname = "/home/matthew/Desktop/Sys/Server/FILE_2.txt";
 	fl.port = 8080;
 	void *point = rmmap(fl, 0);
+	//printf("%i", *(int*)point);
 	getchar();
-	char *buff = malloc(sizeof(char) * 513);
-	mread(point, 512, buff, 513);
-	getchar();
-	printf("written: %i", mwrite(point, 259, buff, 513));
-	getchar();
+	char *buff = malloc(sizeof(char) * 28);
+	printf("reading");
+	printf("Read: %i", mread(point, 0, buff, 28));
+	//getchar();
+	//printf("written: %i", mwrite(point, 259, buff, 513));
+	printf("Data is: %s", buff);
 	printf("before unmap");
+	getchar();
 	rmunmap(point);
 	getchar();
 

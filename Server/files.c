@@ -21,6 +21,7 @@ int readFile(char* buff, size_t length, int fd, off_t offset)
 
 	if(check == -1)
 	{
+		perror("Seek error");
 		return -1;
 	}
 
@@ -28,10 +29,12 @@ int readFile(char* buff, size_t length, int fd, off_t offset)
 
 	if(bytes == -1)
 	{
+		perror("Read error");
 		return -1;
 	}
 	else
 	{
+		perror("it is 0");
 		return 0;
 	}
 }
