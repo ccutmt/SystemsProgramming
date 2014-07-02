@@ -4,8 +4,11 @@ ArrayList * Files = NULL;
 
 int main( int argc, char *argv[] )
 {
+	if(argc != 2){
+		printf("Usage: fmmap_server <portno>");
+		exit(-1);
+	}
 	// Declare variables
-	//ArrayList * ClientList = NULL;
 	fd_set readset;
 	int sockfd, newsockfd, portno;
 	struct sockaddr_in serv_addr;
@@ -19,7 +22,7 @@ int main( int argc, char *argv[] )
 
 	// Initialize socket structure
 	bzero((char *) &serv_addr, sizeof(serv_addr));
-	portno = 8080; // Server port
+	portno = atoi(argv[1]); // Server port
 	serv_addr.sin_family = AF_INET;
 	serv_addr.sin_addr.s_addr = INADDR_ANY; // Accept connections from any address
 	serv_addr.sin_port = htons(portno);
@@ -71,7 +74,6 @@ int main( int argc, char *argv[] )
 							reply->pid = message->pid;
 							sendStruct(i, reply);
 						}else{
-							fflush(stdout);
 							connection * c = getConnectionByFd(i);
 							int off = getConnectionOffset(c);
 							removeAt(connections, off);
