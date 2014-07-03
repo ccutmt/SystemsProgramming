@@ -3,8 +3,8 @@
 
 #include "connections.h"
 #include "files.h"
-#include "../ArrayList/ArrayList.h"
-#include "../Protocol/net_protocol.h"
+#include "ArrayList.h"
+#include "net_protocol.h"
 #include <string.h>
 
 #define _DATA_LENGTH 256

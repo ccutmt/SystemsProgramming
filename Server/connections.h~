@@ -1,7 +1,7 @@
 #ifndef CONNECTIONS_H_
 #define CONNECTIONS_H_
 
-#include "../ArrayList/ArrayList.h"
+#include "ArrayList.h"
 #include <stdlib.h>
 
 typedef struct connection

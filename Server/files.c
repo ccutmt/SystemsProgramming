@@ -1,5 +1,5 @@
 #include "files.h"
-#include "ArrayList.h"
+#include "../ArrayList/ArrayList.h"
 
 int openFile(char* pathname, int *err)
 {
