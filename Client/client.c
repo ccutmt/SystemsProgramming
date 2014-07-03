@@ -8,7 +8,7 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include "fmmap.h"
+#include "../API/fmmap.h"
 
 int main(int argc, char **argv) {
 
@@ -152,22 +152,27 @@ int main(int argc, char **argv) {
 	ip.s_addr = inet_addr("127.0.0.1");
 	fileloc_t fl;
 	fl.ipaddress = ip;
-	fl.pathname = "/home/matthew/Desktop/Sys/Server/FILE_3.txt";
+	//fl.pathname = "/home/matthew/Desktop/Sys/Server/FILE_3.txt";
+	fl.pathname = "/home/ccut/Desktop/Systems_Programming_assignment/Server/FILE_3.txt";
 	fl.port = 8080;
-	printf("pid: %i", getpid());
+	//printf("pid: %i", getpid());
+	printf("Press Enter to map.\n");
 	void *point = rmmap(fl, 0);
 	perror("map");
 	//printf("%i", *(int*)point);
+	printf("Press Enter to read.\n");
 	getchar();
 	char *buff = malloc(sizeof(char) * 5);
-	printf("reading");
+	//printf("reading");
 	printf("Read: %i", mread(point, 0, buff, 5));
 	perror("read");
+	printf("Press Enter to write.\n");
 	getchar();
 	*(buff) = 'Z';
-	printf("Data is: %s", buff);
+	//printf("Data is: %s", buff);
 	printf("written: %i", mwrite(point, 0, buff, 5));
 	perror("write");
+	printf("Press Enter to unmap.\n");
 	getchar();
 	rmunmap(point);
 	perror("Unamp");
