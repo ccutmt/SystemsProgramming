@@ -23,24 +23,25 @@ int main(int argc, char **argv) {
 	fl.port = 8080;
 	//printf("pid: %i", getpid());
 	printf("Press Enter to map.\n");
+	getchar();
 	void *point = rmmap(fl, 0);
 	perror("map");
 	//printf("%i", *(int*)point);
 	printf("Press Enter to read.\n");
 	getchar();
 	char *buff = malloc(sizeof(char) * 5);
-	printf("Read: %zu", mread(point, 0, buff, 5));
+	printf("Read: %zu\n", mread(point, 0, buff, 5));
 	perror("read");
 	printf("Press Enter to write.\n");
 	getchar();
 	*(buff) = 'Z';
 	//printf("Data is: %s", buff);
-	printf("written: %zu", mwrite(point, 0, buff, 5));
+	printf("written: %zu\n", mwrite(point, 0, buff, 5));
 	perror("write");
 	printf("Press Enter to unmap.\n");
 	getchar();
 	rmunmap(point);
-	perror("Unamp");
+	perror("Unmap");
 	getchar();
 	return 0;
 }
