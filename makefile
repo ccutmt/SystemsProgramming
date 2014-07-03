@@ -13,15 +13,18 @@ OBJECTS2 = ArrayList/ArrayList.o Protocol/net_protocol.o API/coordinator.o API/f
 %.o: %.c $(HEADERS2)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-fmserver.out: $(OBJECTS)
+all: fmmap_server client
+
+fmmap_server: $(OBJECTS)
 	gcc -o $@ $^ $(CFLAGS)
 
-client.out: $(OBJECTS2)
+client: $(OBJECTS2)
 	gcc -o $@ $^ $(CFLAGS) 
 
 clean:
-	-rm -f $(OBJECTS)
-	-rm -f $(OBJECTS2)
-	-rm -f fmserver.out
-	-rm -f client.out
+	rm -f $(OBJECTS)
+	rm -f $(OBJECTS2)
+	rm -f fmmap_server
+	rm -f client
 	
+

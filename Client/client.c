@@ -152,8 +152,7 @@ int main(int argc, char **argv) {
 	ip.s_addr = inet_addr("127.0.0.1");
 	fileloc_t fl;
 	fl.ipaddress = ip;
-	//fl.pathname = "/home/matthew/Desktop/Sys/Server/FILE_3.txt";
-	fl.pathname = "/home/ccut/Desktop/Systems_Programming_assignment/Server/FILE_3.txt";
+	fl.pathname = "Server/FILE_2.txt";
 	fl.port = 8080;
 	//printf("pid: %i", getpid());
 	printf("Press Enter to map.\n");
