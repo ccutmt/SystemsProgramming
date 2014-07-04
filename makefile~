@@ -20,7 +20,7 @@ OBJECTS2 = ArrayList/ArrayList.o Protocol/net_protocol.o API/coordinator.o API/f
 #libfmmap.a: $(OBJECT_FILES_FOR_LIBPARSER)
 	#ar rc $@ $^ && ranlib $@
 
-all: fmmap_server client libfmmap.a
+all: fmmap_server client 
 
 fmmap_server: $(OBJECTS)
 	gcc -o $@ $^ $(CFLAGS)
