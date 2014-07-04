@@ -11,7 +11,7 @@ CLIENT_OBJECTS = Client/client.o
 %.o: %.c %.h 
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-all: fmmap_server client
+all: fmmap_server client libfmmap.a
 
 fmmap_server: $(SERVER_OBJECTS)
 	gcc -o $@ $^ $(CFLAGS)
@@ -19,8 +19,8 @@ fmmap_server: $(SERVER_OBJECTS)
 libfmmap.a: $(COMMON_OBJECTS)
 	ar rcs $@ $(COMMON_OBJECTS)
 
-client: libfmmap.a $(CLIENT_OBJECTS)
-	gcc -static -L. -o $@ Client/client.c -lfmmap $(CFLAGS) 
+client: $(COMMON_OBJECTS) $(CLIENT_OBJECTS)
+	gcc -o $@ $^ $(CFLAGS) 
 
 clean:
 	rm -f $(SERVER_OBJECTS) $(COMMON_OBJECTS) $(CLIENT_OBJECTS)
