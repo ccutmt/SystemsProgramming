@@ -1,2 +1,7 @@
 *.out
 *.c~
+*.o
+fmmap_server
+client
+libfmmap.a
+*~
